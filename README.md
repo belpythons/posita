@@ -19,6 +19,36 @@ Project ini dibangun menggunakan arsitektur **Monolith Modern** dengan teknologi
 
 ---
 
+## 🏗️ Architecture & Design Patterns
+
+We adhere to strict SOLID principles and Separation of Concerns. Please follow these patterns when contributing:
+
+### 1. Action Pattern (`app/Actions`)
+Business logic should NOT reside in Controllers. We use **Action Classes** for single-responsibility operations.
+* **Usage**: Controllers should inject and `execute()` actions.
+* **Example**: `StartDailyShopAction`, `CloseDailyShopAction`.
+
+### 2. ViewModel Pattern (`app/ViewModels`)
+Data preparation for views (especially Inertia/Vue) is handled by **ViewModels**.
+* **Purpose**: Keeps Controllers clean and ensures view data is typed and testable.
+* **Example**: `PosDashboardViewModel` prepares data for the Dashboard.
+
+### 3. Observer Pattern (`app/Observers`)
+Side-effects such as **Audit Logging** are handled by Model Observers to keep core logic pure.
+* **Implementation**: `DailyConsignmentObserver` automatically logs "Shop Opened/Closed" events using `spatie/laravel-activitylog`.
+
+### 🗂️ New Directory Structure
+
+```tree
+app/
+├── Actions/          # Business Logic (Single Responsibility)
+│   └── Consignment/
+├── ViewModels/       # View Data Preparation
+└── Observers/        # Model Events (Audit Logs)
+```
+
+---
+
 ## 👥 Tim Pengembang & Pembagian Tugas (Feature Based)
 
 | Nama | Role | Fokus Pengerjaan |
