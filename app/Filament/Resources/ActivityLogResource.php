@@ -49,18 +49,18 @@ class ActivityLogResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('Time')
+                    ->label('Waktu')
                     ->dateTime('d M Y H:i:s')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('causer.name')
-                    ->label('User')
+                    ->label('Pelaku')
                     ->searchable()
                     ->default('System'),
                 Tables\Columns\TextColumn::make('description')
-                    ->label('Activity')
+                    ->label('Aktivitas')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('subject_type')
-                    ->label('Subject')
+                    ->label('Pada Data')
                     ->formatStateUsing(fn($state) => class_basename($state))
                     ->badge(),
                 Tables\Columns\TextColumn::make('properties')

@@ -50,7 +50,7 @@ class User extends Authenticatable
     public function getActivitylogOptions(): \Spatie\Activitylog\LogOptions
     {
         return \Spatie\Activitylog\LogOptions::defaults()
-            ->logFillable()
+            ->logOnly(['*'])
             ->logOnlyDirty();
     }
 }
