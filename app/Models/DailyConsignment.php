@@ -10,6 +10,7 @@ class DailyConsignment extends Model
     use \Spatie\Activitylog\Traits\LogsActivity;
 
     protected $fillable = [
+        'shop_session_id',
         'date',
         'partner_id',
         'manual_partner_name',
@@ -26,9 +27,6 @@ class DailyConsignment extends Model
         'disposition',
         'notes',
         'input_by_user_id',
-        'start_cash',
-        'actual_cash',
-        'closed_at',
     ];
 
     protected $casts = [
@@ -41,9 +39,6 @@ class DailyConsignment extends Model
         'quantity_sold' => 'integer',
         'total_revenue' => 'decimal:2',
         'total_profit' => 'decimal:2',
-        'start_cash' => 'decimal:2',
-        'actual_cash' => 'decimal:2',
-        'closed_at' => 'datetime',
     ];
 
     public function getActivitylogOptions(): \Spatie\Activitylog\LogOptions
@@ -53,6 +48,17 @@ class DailyConsignment extends Model
             ->logOnlyDirty();
     }
 
+    /**
+     * Get the shop session this consignment belongs to.
+     */
+    public function shopSession(): BelongsTo
+    {
+        return $this->belongsTo(ShopSession::class);
+    }
+
+    /**
+     * Get the partner for this consignment.
+     */
     public function partner(): BelongsTo
     {
         return $this->belongsTo(Partner::class);
@@ -66,3 +72,4 @@ class DailyConsignment extends Model
         return $this->belongsTo(User::class, 'input_by_user_id');
     }
 }
+
