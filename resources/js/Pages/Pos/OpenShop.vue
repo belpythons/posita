@@ -1,6 +1,7 @@
 <script setup>
 import EmployeeLayout from '@/Layouts/EmployeeLayout.vue';
 import { Head, useForm, Link } from '@inertiajs/vue3';
+import { formatMoney } from '@/utils/formatMoney';
 
 const props = defineProps({
     hasActiveSession: {
@@ -8,6 +9,10 @@ const props = defineProps({
         default: false,
     },
     activeSession: {
+        type: Object,
+        default: null,
+    },
+    lastClosedSession: {
         type: Object,
         default: null,
     },
@@ -23,14 +28,6 @@ const form = useForm({
 
 const submit = () => {
     form.post('/pos/open');
-};
-
-const formatCurrency = (value) => {
-    return new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        minimumFractionDigits: 0,
-    }).format(value);
 };
 </script>
 
@@ -56,7 +53,7 @@ const formatCurrency = (value) => {
                     <div class="bg-white rounded-lg p-4 mb-4 text-left">
                         <p class="text-sm text-gray-600">Kas Awal:</p>
                         <p class="text-xl font-bold text-gray-800">
-                            {{ formatCurrency(activeSession?.opening_cash || 0) }}
+                            {{ formatMoney(activeSession?.opening_cash || 0) }}
                         </p>
                         <p class="text-sm text-gray-500 mt-2">
                             Dibuka: {{ activeSession?.opened_at }}
@@ -80,45 +77,65 @@ const formatCurrency = (value) => {
             </div>
 
             <!-- Open new session form -->
-            <div v-else class="bg-white rounded-lg shadow p-6">
-                <div class="text-center mb-6">
-                    <div class="text-4xl mb-2">🏪</div>
-                    <h3 class="text-lg font-semibold text-gray-800">Buka Sesi Toko</h3>
-                    <p class="text-sm text-gray-500">{{ today }}</p>
+            <div v-else class="space-y-4">
+                <!-- Last Session Report Download (if available) -->
+                <div v-if="lastClosedSession" class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-blue-600">Sesi Terakhir</p>
+                            <p class="text-xs text-blue-500">{{ lastClosedSession.closed_at }}</p>
+                        </div>
+                        <a
+                            :href="`/pos/report/${lastClosedSession.id}`"
+                            class="bg-blue-600 text-white px-3 py-2 rounded-lg text-sm hover:bg-blue-700"
+                            target="_blank"
+                        >
+                            📄 Download Laporan
+                        </a>
+                    </div>
                 </div>
 
-                <form @submit.prevent="submit" class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Kas Awal (Modal)
-                        </label>
-                        <div class="relative">
-                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                                Rp
-                            </span>
-                            <input
-                                v-model="form.opening_cash"
-                                type="number"
-                                min="0"
-                                step="1000"
-                                class="w-full border rounded-lg pl-10 pr-4 py-3 text-lg"
-                                placeholder="0"
-                                required
-                            />
-                        </div>
-                        <p v-if="form.errors.opening_cash" class="text-red-500 text-sm mt-1">
-                            {{ form.errors.opening_cash }}
-                        </p>
+                <!-- Open Session Form -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="text-center mb-6">
+                        <div class="text-4xl mb-2">🏪</div>
+                        <h3 class="text-lg font-semibold text-gray-800">Buka Sesi Toko</h3>
+                        <p class="text-sm text-gray-500">{{ today }}</p>
                     </div>
 
-                    <button
-                        type="submit"
-                        :disabled="form.processing"
-                        class="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 disabled:opacity-50"
-                    >
-                        {{ form.processing ? 'Membuka...' : '🚀 Buka Toko Sekarang' }}
-                    </button>
-                </form>
+                    <form @submit.prevent="submit" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Kas Awal (Modal)
+                            </label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                                    Rp
+                                </span>
+                                <input
+                                    v-model="form.opening_cash"
+                                    type="number"
+                                    min="0"
+                                    step="1000"
+                                    class="w-full border rounded-lg pl-10 pr-4 py-3 text-lg"
+                                    placeholder="0"
+                                    required
+                                />
+                            </div>
+                            <p v-if="form.errors.opening_cash" class="text-red-500 text-sm mt-1">
+                                {{ form.errors.opening_cash }}
+                            </p>
+                        </div>
+
+                        <button
+                            type="submit"
+                            :disabled="form.processing"
+                            class="w-full bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 disabled:opacity-50"
+                        >
+                            {{ form.processing ? 'Membuka...' : '🚀 Buka Toko Sekarang' }}
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </EmployeeLayout>

@@ -8,34 +8,27 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ShopSession extends Model
 {
-    use \Spatie\Activitylog\Traits\LogsActivity;
-
     protected $fillable = [
         'user_id',
-        'start_cash',
-        'actual_cash',
-        'started_at',
+        'opened_at',
         'closed_at',
+        'opening_cash',
+        'closing_cash_system',
+        'closing_cash_actual',
         'status',
         'notes',
     ];
 
     protected $casts = [
-        'start_cash' => 'decimal:2',
-        'actual_cash' => 'decimal:2',
-        'started_at' => 'datetime',
+        'opened_at' => 'datetime',
         'closed_at' => 'datetime',
+        'opening_cash' => 'decimal:2',
+        'closing_cash_system' => 'decimal:2',
+        'closing_cash_actual' => 'decimal:2',
     ];
 
-    public function getActivitylogOptions(): \Spatie\Activitylog\LogOptions
-    {
-        return \Spatie\Activitylog\LogOptions::defaults()
-            ->logOnly(['*'])
-            ->logOnlyDirty();
-    }
-
     /**
-     * Get the user who owns this shop session.
+     * Get the user that owns this session.
      */
     public function user(): BelongsTo
     {
@@ -43,7 +36,7 @@ class ShopSession extends Model
     }
 
     /**
-     * Get the consignments for this shop session.
+     * Get the daily consignments for this session.
      */
     public function consignments(): HasMany
     {
@@ -51,7 +44,7 @@ class ShopSession extends Model
     }
 
     /**
-     * Check if the session is currently open.
+     * Check if session is open.
      */
     public function isOpen(): bool
     {
@@ -59,21 +52,18 @@ class ShopSession extends Model
     }
 
     /**
-     * Calculate the expected cash based on start_cash + total revenue.
+     * Check if session is closed.
      */
-    public function getExpectedCashAttribute(): float
+    public function isClosed(): bool
     {
-        return (float) $this->start_cash + (float) $this->consignments()->sum('total_revenue');
+        return $this->status === 'closed';
     }
 
     /**
-     * Calculate cash variance (actual - expected).
+     * Get total income from consignments.
      */
-    public function getCashVarianceAttribute(): float
+    public function getTotalIncomeAttribute(): float
     {
-        if ($this->actual_cash === null) {
-            return 0;
-        }
-        return (float) $this->actual_cash - $this->expected_cash;
+        return $this->consignments->sum('subtotal_income');
     }
 }

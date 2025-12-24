@@ -48,6 +48,7 @@ class ShopSessionService
 
     /**
      * Calculate closing summary for a session.
+     * Uses already-updated qty_sold and subtotal_income from consignments.
      */
     public function calculateClosingSummary(ShopSession $session): array
     {
@@ -58,7 +59,7 @@ class ShopSessionService
         $itemsSummary = [];
 
         foreach ($session->consignments as $consignment) {
-            $income = $consignment->qty_sold * $consignment->selling_price;
+            $income = $consignment->subtotal_income;
             $profit = $consignment->qty_sold * ($consignment->selling_price - $consignment->base_price);
 
             $totalIncome += $income;
@@ -91,6 +92,7 @@ class ShopSessionService
 
     /**
      * Close a shop session.
+     * Assumes consignment quantities have already been updated.
      */
     public function closeSession(ShopSession $session, float $actualCash, ?string $notes = null): ShopSession
     {
@@ -98,13 +100,9 @@ class ShopSessionService
             throw new \Exception('Sesi ini sudah ditutup.');
         }
 
+        // Refresh to get updated consignment data
+        $session->refresh();
         $summary = $this->calculateClosingSummary($session);
-
-        // Update all consignments' subtotal_income
-        foreach ($session->consignments as $consignment) {
-            $consignment->calculateSubtotalIncome();
-            $consignment->save();
-        }
 
         // Calculate discrepancy
         $discrepancy = $actualCash - $summary['expected_cash'];

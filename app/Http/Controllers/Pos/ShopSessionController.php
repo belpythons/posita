@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Pos;
 
 use App\Http\Controllers\Controller;
+use App\Models\ShopSession;
+use App\Services\ConsignmentService;
+use App\Services\ReportService;
 use App\Services\ShopSessionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,7 +15,9 @@ use Inertia\Response;
 class ShopSessionController extends Controller
 {
     public function __construct(
-        protected ShopSessionService $shopSessionService
+        protected ShopSessionService $shopSessionService,
+        protected ConsignmentService $consignmentService,
+        protected ReportService $reportService
     ) {
     }
 
@@ -25,9 +30,16 @@ class ShopSessionController extends Controller
         $hasActiveSession = $this->shopSessionService->hasActiveSession($user);
         $activeSession = $this->shopSessionService->getActiveSession($user);
 
+        // Get last closed session for report download
+        $lastClosedSession = ShopSession::where('user_id', $user->id)
+            ->where('status', 'closed')
+            ->latest('closed_at')
+            ->first();
+
         return Inertia::render('Pos/OpenShop', [
             'hasActiveSession' => $hasActiveSession,
             'activeSession' => $activeSession,
+            'lastClosedSession' => $lastClosedSession,
             'today' => today()->format('Y-m-d'),
         ]);
     }
@@ -74,29 +86,42 @@ class ShopSessionController extends Controller
             ]);
         }
 
-        $summary = $this->shopSessionService->calculateClosingSummary($activeSession);
+        // Load consignments with partner
+        $activeSession->load('consignments.partner');
+
+        $consignments = $activeSession->consignments->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'product_name' => $item->product_name,
+                'partner' => $item->partner,
+                'qty_initial' => $item->qty_initial,
+                'qty_remaining' => $item->qty_remaining,
+                'base_price' => (float) $item->base_price,
+                'selling_price' => (float) $item->selling_price,
+            ];
+        });
 
         return Inertia::render('Pos/CloseShop', [
             'hasSession' => true,
             'currentSession' => $activeSession,
-            'consignments' => $summary['items'],
+            'consignments' => $consignments,
             'summary' => [
-                'total_income' => $summary['total_income'],
-                'total_profit' => $summary['total_profit'],
-                'opening_cash' => $summary['opening_cash'],
-                'expected_cash' => $summary['expected_cash'],
+                'opening_cash' => $activeSession->opening_cash,
             ],
         ]);
     }
 
     /**
-     * Close the shop session.
+     * Close the shop session with leftover quantities.
      */
     public function close(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'actual_cash' => 'required|numeric|min:0',
             'notes' => 'nullable|string|max:500',
+            'leftovers' => 'required|array',
+            'leftovers.*.id' => 'required|exists:daily_consignments,id',
+            'leftovers.*.qty_remaining' => 'required|integer|min:0',
         ]);
 
         $user = auth()->user();
@@ -109,6 +134,10 @@ class ShopSessionController extends Controller
         }
 
         try {
+            // First, update all consignment remaining quantities
+            $this->consignmentService->bulkUpdateRemainingQuantities($validated['leftovers']);
+
+            // Then close the session
             $this->shopSessionService->closeSession(
                 $activeSession,
                 (float) $validated['actual_cash'],
@@ -117,11 +146,31 @@ class ShopSessionController extends Controller
 
             return redirect()
                 ->route('pos.session.create')
-                ->with('success', 'Sesi toko berhasil ditutup.');
+                ->with('success', 'Sesi toko berhasil ditutup.')
+                ->with('lastSessionId', $activeSession->id);
         } catch (\Exception $e) {
             return redirect()
                 ->back()
                 ->withErrors(['error' => $e->getMessage()]);
         }
+    }
+
+    /**
+     * Download PDF report for a session.
+     */
+    public function downloadReport(ShopSession $session)
+    {
+        // Verify ownership or allow if admin
+        $user = auth()->user();
+        if ($session->user_id !== $user->id && $user->role !== 'admin') {
+            abort(403, 'Anda tidak memiliki akses ke laporan ini.');
+        }
+
+        // Only allow download for closed sessions
+        if ($session->status !== 'closed') {
+            abort(403, 'Laporan hanya tersedia setelah sesi ditutup.');
+        }
+
+        return $this->reportService->streamSessionReport($session);
     }
 }
