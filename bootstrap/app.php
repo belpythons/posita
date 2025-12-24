@@ -27,7 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($user?->role === 'admin') {
                 return '/admin';
             }
-            return '/pos';
+            return '/pos/open';
         });
     })
     ->withExceptions(function (Exceptions $exceptions): void {
