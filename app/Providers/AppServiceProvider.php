@@ -22,6 +22,6 @@ class AppServiceProvider extends ServiceProvider
     {
         Vite::prefetch(concurrency: 3);
 
-        \App\Models\DailyConsignment::observe(\App\Observers\DailyConsignmentObserver::class);
+        \App\Models\ShopSession::observe(\App\Observers\ShopSessionObserver::class);
     }
 }

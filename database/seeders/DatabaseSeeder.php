@@ -2,14 +2,12 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Schema;
-use App\Models\User;
+use App\Models\BoxTemplate;
 use App\Models\Partner;
 use App\Models\ProductTemplate;
-use App\Models\DailyConsignment;
-use Carbon\Carbon;
+use App\Models\User;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -18,118 +16,146 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Truncate Tables to start fresh
-        Schema::disableForeignKeyConstraints();
-        User::truncate();
-        Partner::truncate();
-        ProductTemplate::truncate();
-        DailyConsignment::truncate();
-        // Also clear activity logs if possible, but might fail if table name differs. 
-        // Better to stick to core tables.
-        Schema::enableForeignKeyConstraints();
-
-        $password = Hash::make('password');
-
-        // 2. Create Users
-        $admin = User::create([
-            'name' => 'Belva Owner',
-            'email' => 'admin@posita.test',
-            'password' => $password,
-            'role' => 'super_admin',
-        ]);
-
-        $retailer1 = User::create([
-            'name' => 'Nurita Karyawan',
-            'email' => 'retailer@posita.test',
-            'password' => $password,
-            'role' => 'employee', // Assuming 'employee' is result of 'retailer' requirement mapping
-        ]);
-
-        $retailer2 = User::create([
-            'name' => 'User Karyawan',
-            'email' => 'user@posita.test',
-            'password' => $password,
-            'role' => 'employee',
-        ]);
-
-        // 3. Create Partners
-        $berkah = Partner::create([
-            'name' => 'Berkah Bakery',
-            'phone' => '081234567890',
+        // Create Admin User
+        User::create([
+            'name' => 'Admin Posita',
+            'email' => 'admin@posita.com',
+            'password' => Hash::make('password'),
+            'role' => 'admin',
             'is_active' => true,
         ]);
 
-        $snack = Partner::create([
-            'name' => 'Snack Mama',
-            'phone' => '089876543210',
-            'is_active' => true,
-        ]);
+        // Create Employee Users
+        $employees = [
+            ['name' => 'Rivaldi', 'email' => 'rivaldi@posita.com'],
+            ['name' => 'Amar', 'email' => 'amar@posita.com'],
+            ['name' => 'Nurita', 'email' => 'nurita@posita.com'],
+        ];
 
-        // 4. Create Product Templates
-        // Berkah Bakery Products
-        ProductTemplate::create([
-            'partner_id' => $berkah->id,
-            'name' => 'Roti Coklat',
-            'base_price' => 2000,
-            'default_markup_percent' => 20, // Sell: 2400
-        ]);
-        ProductTemplate::create([
-            'partner_id' => $berkah->id,
-            'name' => 'Donat gula',
-            'base_price' => 1500,
-            'default_markup_percent' => 20, // Sell: 1800
-        ]);
+        foreach ($employees as $employee) {
+            User::create([
+                'name' => $employee['name'],
+                'email' => $employee['email'],
+                'password' => Hash::make('password'),
+                'role' => 'employee',
+                'is_active' => true,
+            ]);
+        }
 
-        // Snack Mama Products
-        ProductTemplate::create([
-            'partner_id' => $snack->id,
-            'name' => 'Lemper Ayam',
-            'base_price' => 2500,
-            'default_markup_percent' => 10, // Sell: 2750
-        ]);
-        ProductTemplate::create([
-            'partner_id' => $snack->id,
-            'name' => 'Risoles Mayones',
-            'base_price' => 3000,
-            'default_markup_percent' => 15, // Sell: 3450
-        ]);
-        ProductTemplate::create([
-            'partner_id' => $snack->id,
-            'name' => 'Air Mineral',
-            'base_price' => 3000,
-            'default_markup_percent' => 50, // Sell: 4500
-        ]);
+        // Create Partners (Penyetok)
+        $partners = [
+            [
+                'name' => 'Bu Siti - Gorengan',
+                'phone' => '081234567890',
+                'address' => 'Jl. Pasar No. 10',
+            ],
+            [
+                'name' => 'Pak Budi - Kue Basah',
+                'phone' => '081234567891',
+                'address' => 'Jl. Merdeka No. 5',
+            ],
+            [
+                'name' => 'Mbak Ani - Roti',
+                'phone' => '081234567892',
+                'address' => 'Jl. Kenanga No. 15',
+            ],
+        ];
 
-        // 5. Create Daily Consignments (Sessions)
+        foreach ($partners as $partnerData) {
+            $partner = Partner::create([
+                'name' => $partnerData['name'],
+                'phone' => $partnerData['phone'],
+                'address' => $partnerData['address'],
+                'is_active' => true,
+            ]);
 
-        // Session 1: Closed Yesterday (Retailer 1)
-        DailyConsignment::create([
-            'date' => Carbon::yesterday(),
-            'partner_id' => $berkah->id,
-            'product_name' => 'Roti Coklat',
-            'initial_stock' => 50,
-            'base_price' => 2000,
-            'markup_percentage' => 20,
-            'selling_price' => 2400,
-            'quantity_sold' => 45,
-            'total_revenue' => 108000,
-            'total_profit' => 18000,
-            'status' => 'closed',
-            'input_by_user_id' => $retailer1->id,
-        ]);
+            // Create ProductTemplates for each partner
+            $templates = $this->getProductTemplates($partner->name);
+            foreach ($templates as $template) {
+                ProductTemplate::create([
+                    'partner_id' => $partner->id,
+                    'name' => $template['name'],
+                    'base_price' => $template['base_price'],
+                    'default_markup_percent' => $template['markup'],
+                    'is_active' => true,
+                ]);
+            }
+        }
 
-        // Session 2: Active Today (Retailer 1)
-        DailyConsignment::create([
-            'date' => Carbon::today(),
-            'partner_id' => $snack->id,
-            'product_name' => 'Lemper Ayam',
-            'initial_stock' => 30,
-            'base_price' => 2500,
-            'markup_percentage' => 10,
-            'selling_price' => 2750,
-            'quantity_sold' => 0,
-            'status' => 'open',
-            'input_by_user_id' => $retailer1->id,
-        ]);
+        // Create Box Templates
+        $boxTemplates = [
+            // Heavy Meal
+            [
+                'name' => 'Nasi Box A',
+                'type' => 'heavy_meal',
+                'price' => 25000,
+                'items_json' => ['Nasi Putih', 'Ayam Goreng', 'Sambal', 'Lalapan', 'Kerupuk'],
+            ],
+            [
+                'name' => 'Nasi Box B',
+                'type' => 'heavy_meal',
+                'price' => 30000,
+                'items_json' => ['Nasi Putih', 'Rendang', 'Telur Dadar', 'Sambal', 'Lalapan'],
+            ],
+            [
+                'name' => 'Nasi Box Premium',
+                'type' => 'heavy_meal',
+                'price' => 40000,
+                'items_json' => ['Nasi Putih', 'Ayam Bakar', 'Ikan Goreng', 'Sayur Asem', 'Sambal', 'Kerupuk'],
+            ],
+            // Snack Box
+            [
+                'name' => 'Snack Box A',
+                'type' => 'snack_box',
+                'price' => 15000,
+                'items_json' => ['Risoles', 'Pastel', 'Kue Sus', 'Air Mineral'],
+            ],
+            [
+                'name' => 'Snack Box B',
+                'type' => 'snack_box',
+                'price' => 20000,
+                'items_json' => ['Lemper', 'Dadar Gulung', 'Bolu Kukus', 'Onde-onde', 'Teh Kotak'],
+            ],
+        ];
+
+        foreach ($boxTemplates as $template) {
+            BoxTemplate::create([
+                'name' => $template['name'],
+                'type' => $template['type'],
+                'price' => $template['price'],
+                'items_json' => $template['items_json'],
+                'is_active' => true,
+            ]);
+        }
+    }
+
+    private function getProductTemplates(string $partnerName): array
+    {
+        if (str_contains($partnerName, 'Gorengan')) {
+            return [
+                ['name' => 'Bakwan', 'base_price' => 1000, 'markup' => 10],
+                ['name' => 'Tahu Isi', 'base_price' => 1500, 'markup' => 10],
+                ['name' => 'Tempe Goreng', 'base_price' => 1000, 'markup' => 10],
+                ['name' => 'Pisang Goreng', 'base_price' => 2000, 'markup' => 10],
+            ];
+        }
+
+        if (str_contains($partnerName, 'Kue Basah')) {
+            return [
+                ['name' => 'Klepon', 'base_price' => 1500, 'markup' => 15],
+                ['name' => 'Onde-onde', 'base_price' => 2000, 'markup' => 15],
+                ['name' => 'Getuk', 'base_price' => 1500, 'markup' => 15],
+            ];
+        }
+
+        if (str_contains($partnerName, 'Roti')) {
+            return [
+                ['name' => 'Roti Coklat', 'base_price' => 3000, 'markup' => 10],
+                ['name' => 'Roti Keju', 'base_price' => 3500, 'markup' => 10],
+                ['name' => 'Roti Srikaya', 'base_price' => 3000, 'markup' => 10],
+            ];
+        }
+
+        return [];
     }
 }

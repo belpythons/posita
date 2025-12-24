@@ -13,18 +13,18 @@ return new class extends Migration {
         Schema::create('shop_sessions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
-            $table->decimal('start_cash', 12, 2)->default(0);
-            $table->decimal('actual_cash', 12, 2)->nullable();
-            $table->enum('status', ['open', 'closed'])->default('open');
-            $table->timestamp('started_at');
+            $table->timestamp('opened_at');
             $table->timestamp('closed_at')->nullable();
+            $table->decimal('opening_cash', 12, 2)->default(0);
+            $table->decimal('closing_cash_system', 12, 2)->nullable(); // Calculated by system
+            $table->decimal('closing_cash_actual', 12, 2)->nullable(); // Actual cash in drawer
+            $table->enum('status', ['open', 'closed'])->default('open');
             $table->text('notes')->nullable();
             $table->timestamps();
 
-            // Indexes for frequently queried columns
             $table->index('user_id');
             $table->index('status');
-            $table->index('started_at');
+            $table->index('opened_at');
         });
     }
 

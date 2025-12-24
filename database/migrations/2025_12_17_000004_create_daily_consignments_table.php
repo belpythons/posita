@@ -12,30 +12,20 @@ return new class extends Migration {
     {
         Schema::create('daily_consignments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('shop_session_id')->nullable()->constrained('shop_sessions')->nullOnDelete();
-            $table->date('date');
-            $table->foreignId('partner_id')->nullable()->constrained('partners')->nullOnDelete();
-            $table->string('manual_partner_name')->nullable();
+            $table->foreignId('shop_session_id')->constrained('shop_sessions')->cascadeOnDelete();
+            $table->foreignId('partner_id')->constrained('partners')->cascadeOnDelete();
             $table->string('product_name');
-            $table->integer('initial_stock');
+            $table->integer('qty_initial');
+            $table->integer('qty_sold')->default(0);
+            $table->integer('qty_remaining')->default(0);
             $table->decimal('base_price', 12, 2);
-            $table->integer('markup_percentage')->default(0);
             $table->decimal('selling_price', 12, 2);
-            $table->integer('remaining_stock')->default(0);
-            $table->integer('quantity_sold')->default(0);
-            $table->decimal('total_revenue', 12, 2)->default(0);
-            $table->decimal('total_profit', 12, 2)->default(0);
-            $table->enum('status', ['open', 'closed'])->default('open');
-            $table->enum('disposition', ['returned', 'donated'])->nullable();
-            $table->text('notes')->nullable();
-            $table->foreignId('input_by_user_id')->constrained('users');
+            $table->integer('markup_percent')->default(10);
+            $table->decimal('subtotal_income', 12, 2)->default(0); // qty_sold * selling_price
             $table->timestamps();
 
-            // Indexes for frequently filtered columns
-            $table->index('date');
-            $table->index('status');
-            $table->index('partner_id');
             $table->index('shop_session_id');
+            $table->index('partner_id');
         });
     }
 

@@ -10,16 +10,16 @@ return new class extends Migration {
      */
     public function up(): void
     {
-        Schema::create('product_templates', function (Blueprint $table) {
+        Schema::create('box_templates', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('partner_id')->constrained('partners')->cascadeOnDelete();
             $table->string('name');
-            $table->decimal('base_price', 12, 2);
-            $table->integer('default_markup_percent')->default(10); // 5, 10, or 15
+            $table->enum('type', ['heavy_meal', 'snack_box']);
+            $table->decimal('price', 12, 2);
+            $table->json('items_json'); // Array of items: ["Nasi", "Ayam", "Lalapan"]
             $table->boolean('is_active')->default(true);
             $table->timestamps();
 
-            $table->index('partner_id');
+            $table->index('type');
             $table->index('is_active');
         });
     }
@@ -29,6 +29,6 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::dropIfExists('product_templates');
+        Schema::dropIfExists('box_templates');
     }
 };

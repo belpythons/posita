@@ -16,12 +16,18 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
         ]);
 
+        // Register role middleware alias
+        $middleware->alias([
+            'role' => \App\Http\Middleware\RoleMiddleware::class,
+        ]);
+
+        // Redirect authenticated users based on role
         $middleware->redirectUsersTo(function () {
             $user = \Illuminate\Support\Facades\Auth::user();
-            if ($user?->role === 'super_admin') {
+            if ($user?->role === 'admin') {
                 return '/admin';
             }
-            return '/dashboard';
+            return '/pos';
         });
     })
     ->withExceptions(function (Exceptions $exceptions): void {
