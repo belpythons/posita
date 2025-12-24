@@ -1,150 +1,133 @@
-<?php
+<?php //Clay-X
 
-namespace App\Actions\Consignment;
+namespace App\Actions\Consignment; //Clay-X
 
-use App\Models\ShopSession;
-use App\Models\DailyConsignment;
-use Illuminate\Support\Facades\DB;
-use Exception;
+use App\Models\DailyConsignment; //Clay-X
+use Illuminate\Support\Facades\DB; //Clay-X
+use Illuminate\Validation\ValidationException; //Clay-X
+use Exception; //Clay-X
 
-class CloseDailyShopAction
-{
+class CloseDailyShopAction //Clay-X
+{ //Clay-X
     /**
      * Close the daily shop session and calculate profit.
      * Implements Single Action Class Pattern.
      *
-     * @param ShopSession $shopSession The shop session to close
-     * @param array $itemsData Array of items with remaining_stock [{id, remaining_stock}, ...]
-     * @param float $actualCash Actual cash counted at end of day
-     * @return array Response with success status and profit data
-     * @throws Exception
+     * @param DailyConsignment $dailyConsignment //Clay-X
+     * @param array $itemsData Array of items with remaining_stock (item_id, remaining_stock) //Clay-X
+     * @param float $actualCash Actual cash counted at end of day //Clay-X
+     * @return array Response with success status and profit data //Clay-X
+     * @throws ValidationException //Clay-X
+     * @throws Exception //Clay-X
      */
-    public function execute(ShopSession $shopSession, array $itemsData, float $actualCash): array
-    {
-        // Validasi bahwa session masih open
-        if ($shopSession->status !== 'open') {
-            throw new Exception("Session sudah ditutup atau bukan status 'open'.");
-        }
+    public function execute(DailyConsignment $dailyConsignment, array $itemsData, float $actualCash): array //Clay-X
+    { //Clay-X
+        // Clay-X: Validasi bahwa session sudah dibuka
+        if ($dailyConsignment->status !== 'open' || $dailyConsignment->closed_at !== null) { //Clay-X
+            throw new Exception("Session is not open or already closed."); //Clay-X
+        } //Clay-X
 
-        if ($shopSession->closed_at !== null) {
-            throw new Exception("Session sudah pernah ditutup sebelumnya.");
-        }
+        return DB::transaction(function () use ($dailyConsignment, $itemsData, $actualCash) { //Clay-X
+            // Clay-X: Ambil semua items yang terkait dengan session ini
+            $items = DailyConsignment::where('date', $dailyConsignment->date) //Clay-X
+                ->where('input_by_user_id', $dailyConsignment->input_by_user_id) //Clay-X
+                ->where('status', '!=', 'closed') //Clay-X
+                ->get(); //Clay-X
 
-        return DB::transaction(function () use ($shopSession, $itemsData, $actualCash) {
-            // Ambil semua items yang berelasi dengan session ini
-            $consignments = $shopSession->consignments()->where('status', 'open')->get();
+            // Clay-X: Validate dan hitung profit per item
+            $totalProfit = 0; //Clay-X
+            $totalRevenue = 0; //Clay-X
+            $processedItems = []; //Clay-X
 
-            if ($consignments->isEmpty()) {
-                throw new Exception("Tidak ada item konsinyasi dalam sesi ini.");
-            }
+            foreach ($items as $item) { //Clay-X
+                // Clay-X: Cari data sisa stok dari request
+                $itemData = collect($itemsData)->firstWhere('id', $item->id); //Clay-X
 
-            // Index items data by id for quick lookup
-            $itemsDataById = collect($itemsData)->keyBy('id');
+                if (!$itemData) { //Clay-X
+                    throw new ValidationException( //Clay-X
+                        'Missing stock data for item: ' . $item->product_name //Clay-X
+                    ); //Clay-X
+                } //Clay-X
 
-            $totalProfit = 0;
-            $totalRevenue = 0;
-            $processedItems = [];
+                $remainingStock = $itemData['remaining_stock'] ?? 0; //Clay-X
 
-            foreach ($consignments as $item) {
-                // Cari data sisa stok dari request
-                $itemData = $itemsDataById->get($item->id);
+                // Clay-X: Validasi stok sisa tidak boleh negatif
+                if ($remainingStock < 0) { //Clay-X
+                    throw new ValidationException( //Clay-X
+                        'Remaining stock cannot be negative for: ' . $item->product_name //Clay-X
+                    ); //Clay-X
+                } //Clay-X
 
-                if (!$itemData) {
-                    throw new Exception(
-                        "Data stok sisa tidak ditemukan untuk item: {$item->product_name} (ID: {$item->id})"
-                    );
-                }
+                // Clay-X: Validasi stok sisa tidak boleh lebih dari stok awal
+                if ($remainingStock > $item->initial_stock) { //Clay-X
+                    throw new ValidationException( //Clay-X
+                        'Remaining stock cannot exceed initial stock for: ' . $item->product_name //Clay-X
+                    ); //Clay-X
+                } //Clay-X
 
-                $remainingStock = (int) ($itemData['remaining_stock'] ?? 0);
+                // Clay-X: Hitung kuantitas terjual
+                $quantitySold = $item->initial_stock - $remainingStock; //Clay-X
 
-                // Validasi stok sisa tidak boleh negatif
-                if ($remainingStock < 0) {
-                    throw new Exception(
-                        "Stok sisa tidak boleh negatif untuk: {$item->product_name}"
-                    );
-                }
+                // Clay-X: Hitung profit per item: (Stok Awal - Stok Sisa) × (Harga Jual - Modal)
+                $profitPerUnit = $item->selling_price - $item->base_price; //Clay-X
+                $itemProfit = $quantitySold * $profitPerUnit; //Clay-X
+                $itemRevenue = $quantitySold * $item->selling_price; //Clay-X
 
-                // Validasi stok sisa tidak boleh lebih dari stok awal
-                if ($remainingStock > $item->initial_stock) {
-                    throw new Exception(
-                        "Stok sisa ({$remainingStock}) tidak boleh melebihi stok awal ({$item->initial_stock}) untuk: {$item->product_name}"
-                    );
-                }
+                $totalProfit += $itemProfit; //Clay-X
+                $totalRevenue += $itemRevenue; //Clay-X
 
-                // Hitung kuantitas terjual
-                $quantitySold = $item->initial_stock - $remainingStock;
+                // Clay-X: Update item dengan data akhir
+                $item->update([ //Clay-X
+                    'remaining_stock' => $remainingStock, //Clay-X
+                    'quantity_sold' => $quantitySold, //Clay-X
+                    'total_profit' => $itemProfit, //Clay-X
+                    'total_revenue' => $itemRevenue, //Clay-X
+                    'status' => 'closed', //Clay-X
+                    'closed_at' => now(), //Clay-X
+                ]); //Clay-X
 
-                // Hitung profit per item: (Qty Sold) × (Harga Jual - Modal)
-                $profitPerUnit = $item->selling_price - $item->base_price;
-                $itemProfit = $quantitySold * $profitPerUnit;
-                $itemRevenue = $quantitySold * $item->selling_price;
+                // Clay-X: Simpan data processed item untuk response
+                $processedItems[] = [ //Clay-X
+                    'id' => $item->id, //Clay-X
+                    'product_name' => $item->product_name, //Clay-X
+                    'initial_stock' => $item->initial_stock, //Clay-X
+                    'remaining_stock' => $remainingStock, //Clay-X
+                    'quantity_sold' => $quantitySold, //Clay-X
+                    'selling_price' => $item->selling_price, //Clay-X
+                    'base_price' => $item->base_price, //Clay-X
+                    'profit' => $itemProfit, //Clay-X
+                    'revenue' => $itemRevenue, //Clay-X
+                ]; //Clay-X
+            } //Clay-X
 
-                $totalProfit += $itemProfit;
-                $totalRevenue += $itemRevenue;
+            // Clay-X: Hitung cash discrepancy
+            $expectedCash = $dailyConsignment->start_cash + $totalRevenue; //Clay-X
+            $cashDiscrepancy = $actualCash - $expectedCash; //Clay-X
 
-                // Update item (DailyConsignment) dengan data akhir
-                $item->update([
-                    'remaining_stock' => $remainingStock,
-                    'quantity_sold' => $quantitySold,
-                    'total_profit' => $itemProfit,
-                    'total_revenue' => $itemRevenue,
-                    'status' => 'closed',
-                ]);
+            // Clay-X: Update session record dengan data akhir
+            $dailyConsignment->update([ //Clay-X
+                'actual_cash' => $actualCash, //Clay-X
+                'total_profit' => $totalProfit, //Clay-X
+                'total_revenue' => $totalRevenue, //Clay-X
+                'closed_at' => now(), //Clay-X
+                'status' => 'closed', //Clay-X
+                'notes' => "Cash discrepancy: " . ($cashDiscrepancy >= 0 ? '+' : '') . number_format($cashDiscrepancy, 2), //Clay-X
+            ]); //Clay-X
 
-                // Simpan data processed item untuk response
-                $processedItems[] = [
-                    'id' => $item->id,
-                    'product_name' => $item->product_name,
-                    'initial_stock' => $item->initial_stock,
-                    'remaining_stock' => $remainingStock,
-                    'quantity_sold' => $quantitySold,
-                    'selling_price' => (float) $item->selling_price,
-                    'base_price' => (float) $item->base_price,
-                    'profit' => $itemProfit,
-                    'revenue' => $itemRevenue,
-                ];
-            }
-
-            // Hitung cash discrepancy
-            $expectedCash = (float) $shopSession->start_cash + $totalRevenue;
-            $cashDiscrepancy = $actualCash - $expectedCash;
-
-            // Buat summary notes dengan informasi profit/revenue/discrepancy
-            $notes = sprintf(
-                "Total Revenue: Rp %s | Total Profit: Rp %s | Expected Cash: Rp %s | Actual Cash: Rp %s | Discrepancy: %sRp %s",
-                number_format($totalRevenue, 0, ',', '.'),
-                number_format($totalProfit, 0, ',', '.'),
-                number_format($expectedCash, 0, ',', '.'),
-                number_format($actualCash, 0, ',', '.'),
-                $cashDiscrepancy >= 0 ? '+' : '-',
-                number_format(abs($cashDiscrepancy), 0, ',', '.')
-            );
-
-            // Update ShopSession dengan data akhir
-            // Catatan: actual_cash dan notes disimpan karena tidak ada kolom total_profit/total_revenue
-            $shopSession->update([
-                'actual_cash' => $actualCash,
-                'closed_at' => now(),
-                'status' => 'closed',
-                'notes' => $notes,
-            ]);
-
-            // Return response dengan format sukses dan detail profit
-            return [
-                'success' => true,
-                'message' => 'Toko berhasil ditutup!',
-                'data' => [
-                    'shop_session_id' => $shopSession->id,
-                    'total_profit' => $totalProfit,
-                    'total_revenue' => $totalRevenue,
-                    'start_cash' => (float) $shopSession->start_cash,
-                    'actual_cash' => $actualCash,
-                    'expected_cash' => $expectedCash,
-                    'cash_discrepancy' => $cashDiscrepancy,
-                    'items_count' => count($processedItems),
-                    'items' => $processedItems,
-                ],
-            ];
-        });
-    }
-}
+            // Clay-X: Return response dengan format sukses dan detail profit
+            return [ //Clay-X
+                'success' => true, //Clay-X
+                'message' => 'Shop closed successfully', //Clay-X
+                'data' => [ //Clay-X
+                    'total_profit' => $totalProfit, //Clay-X
+                    'total_revenue' => $totalRevenue, //Clay-X
+                    'start_cash' => $dailyConsignment->start_cash, //Clay-X
+                    'actual_cash' => $actualCash, //Clay-X
+                    'expected_cash' => $expectedCash, //Clay-X
+                    'cash_discrepancy' => $cashDiscrepancy, //Clay-X
+                    'items' => $processedItems, //Clay-X
+                ], //Clay-X
+            ]; //Clay-X
+        }); //Clay-X
+    } //Clay-X
+} //Clay-X

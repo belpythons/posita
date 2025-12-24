@@ -1,178 +1,213 @@
----
+# POSITA - Point of Sales for UMKM Retailers
 
-# 🏪 Aplikasi POS Konsinyasi UMKM (Web Apps)
+**POSITA** adalah aplikasi Kasir (Point of Sales) modern yang dirancang khusus untuk membantu UMKM retail mengelola penjualan, stok konsinyasi, dan pelaporan harian. Aplikasi ini dibangun dengan arsitektur **Modern Monolith** yang memisahkan logika operasional kasir (Frontend) dan manajemen pusat (Admin Panel).
 
-Aplikasi manajemen point-of-sales sederhana yang dirancang khusus untuk toko retail yang menerima titipan barang (konsinyasi) dari berbagai UMKM. Aplikasi ini fokus pada pencatatan **Stok Masuk (Pagi)** dan **Stok Keluar (Malam)**, serta perhitungan otomatis keuntungan dan setoran mitra.
+## 🛠️ Tech Stack
 
----
+Project ini dibangun menggunakan teknologi terkini di ekosistem Laravel:
 
-## 🚀 Tech Stack
-
-Project ini dibangun menggunakan arsitektur **Monolith Modern** dengan teknologi berikut:
-
-*   **Backend Framework:** Laravel 12
-*   **Frontend Framework:** Vue.js 3 (via Inertia.js)
-*   **Admin Panel:** FilamentPHP v3 (Super Admin Dashboard)
-*   **Audit Trail:** Spatie Activitylog
-*   **Styling:** Tailwind CSS
-*   **Database:** MySQL (Eloquent ORM)
-*   **Authentication:** Laravel Breeze (Customized)
+* **Backend Framework:** Laravel 12
+* **Frontend Framework:** Vue.js 3 (via Inertia.js)
+* **Admin Panel:** FilamentPHP v3 (Super Admin Dashboard)
+* **Database:** MySQL
+* **Styling:** Tailwind CSS 4.0
+* **Audit Trail:** Spatie Activitylog
+* **Authentication:** Laravel Breeze (Customized with Role-based Guards)
 
 ---
 
-## 👥 Tim Pengembang & Pembagian Tugas
+## 🏗️ Architecture & Design Patterns
 
-| Nama | Role | Fokus Pengerjaan |
-| --- | --- | --- |
-| 👨‍💻 **Belva** | **Lead / Backend 1** | Setup Project, Database Schema, Filament Panel (Super Admin), Git Repository Manager. |
-| 👨‍💻 **Rivaldi** | **Backend 2** | Logic Controller (`PosController`), Routing, Kalkulasi Markup & Profit, Validasi Data. |
-| 👩‍💻 **Nurita** | **Frontend 1** | UI/UX Design, Atomic Components (`Card`, `Button`), Styling Tailwind, Mobile Responsiveness. |
-| 👨‍💻 **Amar** | **Frontend 2** | Page Integration (`OpenShop`, `CloseShop`), Form Handling (`useForm`), API Integration via Inertia. |
+Untuk menjaga kode tetap bersih, mudah di-maintain, dan *scalable*, project ini menerapkan beberapa **Design Patterns** dan prinsip **Domain-Driven Design (DDD)** ringan:
 
----
+### 1. Action Pattern (Business Logic)
+Kami memindahkan logika bisnis yang kompleks dari Controller ke dalam **Action Classes**. Hal ini memastikan prinsip *DRY (Don't Repeat Yourself)*, di mana logika yang sama bisa dipanggil baik dari controller Vue maupun Filament.
 
-## 🔒 Keamanan & Audit Trail (Privacy First)
+* **Lokasi:** `app/Actions/`
+* **Contoh:**
+    * `StartDailyShopAction`: Menangani validasi dan pembukaan sesi toko harian.
+    * `CloseDailyShopAction`: Menghitung varian kas, rekap penjualan, dan menutup sesi.
 
-Sistem ini menerapkan standar keamanan ketat untuk integritas data:
+### 2. ViewModel Pattern (Data Presentation)
+Untuk menghindari "Fat Controller", kami menggunakan **ViewModel** untuk mempersiapkan data yang akan dikirim ke tampilan (Inertia/Vue). ViewModel membungkus data dari berbagai model menjadi satu objek yang rapi.
 
-1.  **Role-Based Access Control (RBAC):**
-    *   **Super Admin:** Akses penuh ke Panel Filament (`/admin`) untuk manajemen User, Mitra, dan Laporan.
-    *   **Employee:** Akses khusus ke POS Dashboard (`/dashboard`) untuk input transaksi harian.
-    *   *Note:* Registrasi publik dinonaktifkan. Akun baru hanya bisa dibuat oleh Super Admin.
-2.  **Audit Trail (Log Aktivitas):**
-    *   Mencatat setiap perubahan data (Create, Update, Delete) pada User, Partner, dan Transaksi.
-    *   Mencatat riwayat Login pengguna.
-    *   Log bersifat **Read-Only** dan bisa dipantau via menu "Audit Logs" di Panel Admin.
+* **Lokasi:** `app/ViewModels/`
+* **Contoh:** `PosDashboardViewModel` menyiapkan data mitra, sesi aktif, dan statistik harian untuk dashboard kasir.
 
----
+### 3. Observer Pattern (Audit & Side Effects)
+Pencatatan log aktivitas (Audit Trail) dilakukan secara otomatis menggunakan **Observer Pattern**. Controller tidak perlu tahu tentang proses logging.
 
-## 🛠️ Cara Install & Setup (Local Development)
+* **Lokasi:** `app/Observers/`
+* **Contoh:** `DailyConsignmentObserver` otomatis mencatat log ke tabel `activity_log` setiap kali toko dibuka atau ditutup.
 
-Ikuti langkah-langkah ini untuk menjalankan project di komputer Anda.
+### 4. Role-Based Access Control (Separated Auth)
+Sistem login dipisahkan secara ketat untuk keamanan:
+* **Super Admin:** Hanya bisa login via `/admin` (Filament Panel).
+* **Retailer (Kasir):** Hanya bisa login via `/login` (Inertia UI) dan akan di-redirect jika mencoba akses admin.
 
-### 1. Prasyarat
+### 📂 Struktur Folder Penting
+```text
+app/
+├── Actions/          <-- Logika Bisnis (Buka/Tutup Toko)
+├── Filament/         <-- Admin Panel Resources
+├── Http/
+│   ├── Controllers/  <-- Controller Tipis (Hanya memanggil Action)
+│   └── Middleware/   <-- Proteksi Role
+├── Models/
+├── Observers/        <-- Otomasi Activity Log
+└── ViewModels/       <-- Penyiapan Data View
 
-Pastikan sudah terinstall:
-
-*   PHP >= 8.2
-*   Composer
-*   Node.js & NPM
-*   MySQL (XAMPP/Laragon)
-
-### 2. Clone Repository
-
-```bash
-git clone https://github.com/belpythons/posita.git
-cd posita
 ```
 
-### 3. Install Dependencies
+---
 
-Install library PHP dan JavaScript.
+## 👥 Tim & Pembagian Tugas (Jobdesk)
+
+Pengembangan fitur dibagi berdasarkan modul spesifik untuk efisiensi kerja:
+
+### 👨‍✈️ Belva (Team Lead & System Architect)
+
+* **Tanggung Jawab:** Integrasi sistem, keamanan, dan manajemen role.
+* **Implementasi:**
+* Refactoring kode menerapkan Design Patterns (Action, ViewModel, Observer).
+* Membuat proteksi Middleware & Login Redirect (Admin vs Retailer).
+* Implementasi `spatie/activitylog` pada Filament (`ActivityLogResource`).
+* Setup Server & Deployment.
+
+
+
+### 👨‍💻 Rivaldi (Fitur "Buka Kedai")
+
+* **Tanggung Jawab:** Alur pembukaan toko dan input stok awal.
+* **Implementasi:**
+* Backend: Logic `StartDailyShopAction`.
+* Frontend: Halaman `Pos/OpenShop.vue`.
+* Fitur: Input modal awal, pemilihan mitra, dan kalkulasi harga jual otomatis (Markup logic).
+
+
+
+### 👨‍💻 Amar (Fitur "Tutup Kedai")
+
+* **Tanggung Jawab:** Rekapitulasi harian dan penutupan buku.
+* **Implementasi:**
+* Backend: Logic `CloseDailyShopAction`.
+* Frontend: Halaman `Pos/CloseShop.vue`.
+* Fitur: Input uang aktual, kalkulasi selisih (variance), dan ringkasan penjualan harian.
+
+
+
+### 👩‍💻 Nurita (UI/UX & Theming)
+
+* **Tanggung Jawab:** Antarmuka pengguna dan pengalaman visual.
+* **Implementasi:**
+* Styling Global: Menentukan palet warna (Biru/Orange) dan Typography.
+* Komponen: Membuat `ToastNotification.vue`, Card Layout, dan responsivitas mobile.
+* Frontend: Memastikan transisi antar halaman (Inertia) berjalan mulus.
+
+
+
+---
+
+## 🚀 Panduan Instalasi (Installation Guide)
+
+Ikuti langkah-langkah berikut untuk menjalankan project di local environment Anda:
+
+### Prasyarat
+
+* PHP >= 8.4
+* Composer
+* Node.js & NPM
+* MySQL
+
+### Langkah 1: Clone Repository
+
+```bash
+git clone [https://github.com/username/posita.git](https://github.com/username/posita.git)
+cd posita
+
+```
+
+### Langkah 2: Install Dependencies
+
+Install paket PHP dan JavaScript:
 
 ```bash
 composer install
 npm install
+
 ```
 
-### 4. Setup Environment
+### Langkah 3: Konfigurasi Environment
 
-Duplikat file `.env.example` dan ubah menjadi `.env`.
+Salin file `.env.example` menjadi `.env`:
 
 ```bash
 cp .env.example .env
+
 ```
 
-Buka file `.env` dan sesuaikan koneksi database.
+Buka file `.env` dan sesuaikan konfigurasi database Anda:
 
-### 5. Generate Key & Migrasi
+```ini
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=retailer
+DB_USERNAME=root
+DB_PASSWORD=
 
-Penting: Migrasi juga akan membuat tabel untuk `activity_log`.
+```
+
+### Langkah 4: Generate Key & Migrate Database
+
+Generate application key dan jalankan migrasi database beserta seeder (data dummy):
 
 ```bash
 php artisan key:generate
-php artisan migrate
+php artisan migrate:fresh --seed
+
 ```
 
-### 6. Buat Akun Super Admin
+*> **PENTING:** Perintah `--seed` wajib dijalankan agar Anda memiliki akun Super Admin dan Retailer untuk login.*
 
-Jalankan perintah ini untuk membuat user yang bisa akses panel `/admin`.
+### Langkah 5: Jalankan Aplikasi
 
-```bash
-php artisan make:filament-user
-# Ikuti instruksi di terminal (Nama, Email, Password)
-```
+Anda perlu menjalankan dua terminal terpisah:
 
-### 7. Jalankan Aplikasi
-
-Buka dua terminal terpisah:
-
-**Terminal 1 (Backend Server):**
-
-```bash
-php artisan serve
-```
-
-**Terminal 2 (Frontend Compiler):**
+**Terminal 1 (Vite Development Server):**
 
 ```bash
 npm run dev
+
 ```
 
-Akses Aplikasi:
-*   **Login:** `http://localhost:8000/login`
-    *   *Super Admin* -> Redirect ke `/admin`
-    *   *Employee* -> Redirect ke `/dashboard`
+**Terminal 2 (Laravel Server):**
+
+```bash
+php artisan serve
+
+```
+
+Akses aplikasi di: `http://localhost:8000`
 
 ---
 
-## 📂 Struktur Folder Penting (Zona Kerja Tim)
+## 🔐 Akun Demo (Credentials)
 
-Agar tidak terjadi *conflict* saat push code, perhatikan area kerja masing-masing:
+Gunakan akun berikut untuk pengujian sistem (dibuat oleh Seeder):
 
-*   **Belva (Core & Admin):**
-    *   `app/Models/*`
-    *   `database/migrations/*`
-    *   `app/Filament/*`
-*   **Rivaldi (Logic):**
-    *   `app/Http/Controllers/PosController.php`
-    *   `routes/web.php`
-*   **Nurita (UI Components):**
-    *   `resources/js/Components/ConsignmentCard.vue`
-    *   `resources/js/Layouts/EmployeeLayout.vue`
-*   **Amar (Pages):**
-    *   `resources/js/Pages/Pos/OpenShop.vue`
-    *   `resources/js/Pages/Pos/CloseShop.vue`
+### 1. Super Admin (Akses Filament Panel)
 
----
+* **URL:** `http://localhost:8000/admin`
+* **Email:** `admin@posita.test`
+* **Password:** `password`
+* *Fitur:* Manajemen User, Master Data Partner, Monitoring Activity Log.
 
-## 📝 Alur Penggunaan Aplikasi (User Flow)
+### 2. Retailer / Kasir (Akses POS Dashboard)
 
-1.  **Setup Awal (Super Admin):**
-    *   Login ke `/admin`.
-    *   Menu **Users**: Buat akun untuk Karyawan (Role: Employee).
-    *   Menu **Partners**: Tambah data Mitra tetap.
-2.  **Buka Kedai - Input Pagi (Karyawan):**
-    *   Login menggunakan akun Employee.
-    *   Pilih menu **"Buka Kedai"**.
-    *   Pilih Mitra & Input Barang (Nama, Stok, Modal).
-    *   Sistem menghitung Harga Jual otomatis.
-3.  **Tutup Kedai - Input Malam (Karyawan):**
-    *   Pilih menu **"Tutup Kedai"**.
-    *   Input **Sisa Stok (Fisik)**.
-    *   Simpan. Sistem menghitung Profit & Revenue.
-4.  **Monitoring (Super Admin):**
-    *   Cek Dashboard `/admin` untuk laporan keuangan.
-    *   Cek menu **Audit Logs** untuk memantau aktivitas karyawan.
+* **URL:** `http://localhost:8000/login`
+* **Email:** `retailer@posita.test`
+* **Password:** `password`
+* *Fitur:* Buka Toko, Transaksi, Tutup Toko.
 
 ---
-
-## ⚠️ Catatan Penting
-
-*   **Filament Version:** Project ini menggunakan Filament **v3.2**.
-*   **Laravel Version:** Laravel 12.
-*   **Security:** Password user baru di-hash otomatis. Reset password bisa dilakukan oleh Admin.
-
----
-
-*Dibuat untuk tugas Project Development Tim.*

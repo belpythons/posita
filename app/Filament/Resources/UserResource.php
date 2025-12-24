@@ -35,8 +35,7 @@ class UserResource extends Resource
                         'super_admin' => 'Super Admin',
                         'employee' => 'Employee',
                     ])
-                    ->required()
-                    ->default('employee'),
+                    ->required(),
                 Forms\Components\DateTimePicker::make('email_verified_at'),
                 Forms\Components\TextInput::make('password')
                     ->password()

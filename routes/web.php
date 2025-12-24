@@ -27,7 +27,7 @@ Route::middleware('auth')->group(function () {
     // POS Routes
     Route::get('/pos', [PosController::class, 'index'])->name('pos.dashboard');
     Route::get('/pos/open', [PosController::class, 'createOpen'])->name('pos.open');
-    Route::post('/pos/open', [PosController::class, 'storeOpen'])->name('pos.store');
+    Route::post('/pos/open', [PosController::class, 'storeOpen'])->name('pos.store-open');
     Route::get('/pos/close', [PosController::class, 'createClose'])->name('pos.close');
     Route::put('/pos/close/{shopSession}', [PosController::class, 'updateClose'])->name('pos.update-close');
 });

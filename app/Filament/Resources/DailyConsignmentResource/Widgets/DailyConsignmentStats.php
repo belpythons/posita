@@ -15,8 +15,7 @@ class DailyConsignmentStats extends BaseWidget
             ->sum('total_profit');
 
         return [
-            Stat::make('Total Profit Today', number_format($todayProfit, 2))
-                ->prefix('$')
+            Stat::make('Total Profit Today', '$' . number_format($todayProfit, 2))
                 ->description('Profit from consignments for ' . Carbon::today()->toFormattedDateString())
                 ->color('success'),
         ];

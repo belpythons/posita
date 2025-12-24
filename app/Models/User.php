@@ -4,13 +4,22 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
+
+class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, \Spatie\Activitylog\Traits\LogsActivity;
+
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return $this->role === 'super_admin' && $panel->getId() === 'admin';
+    }
 
     /**
      * The attributes that are mass assignable.
@@ -50,7 +59,16 @@ class User extends Authenticatable
     public function getActivitylogOptions(): \Spatie\Activitylog\LogOptions
     {
         return \Spatie\Activitylog\LogOptions::defaults()
-            ->logFillable()
+            ->logOnly(['*'])
             ->logOnlyDirty();
     }
+
+    /**
+     * Get the shop sessions for this user.
+     */
+    public function shopSessions(): HasMany
+    {
+        return $this->hasMany(ShopSession::class);
+    }
 }
+

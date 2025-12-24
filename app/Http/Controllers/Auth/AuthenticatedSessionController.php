@@ -31,15 +31,19 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
 
+        if ($request->user()->role === 'super_admin') {
+            Auth::guard('web')->logout();
+
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'email' => 'Super Admins must login via /admin.',
+            ]);
+        }
+
         $request->session()->regenerate();
 
         activity('auth')
             ->causedBy($request->user())
             ->log('logged in');
-
-        if ($request->user()->role === 'super_admin') {
-            return redirect()->intended(route('filament.admin.pages.dashboard', absolute: false));
-        }
 
         return redirect()->intended(route('dashboard', absolute: false));
     }

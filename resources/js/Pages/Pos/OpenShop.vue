@@ -1,112 +1,152 @@
 <script setup>
-import { useForm } from '@inertiajs/vue3';
+import { useForm, usePage } from '@inertiajs/vue3';
+import { computed, ref, watch } from 'vue';
 
 const props = defineProps({
-    partners: {
-        type: Array,
-        required: true,
-    },
+    partners: { type: Array, required: true },
+    activeSessionId: { type: Number, default: null }
+});
+
+const page = usePage();
+const showSuccess = ref(false);
+
+// Mengambil pesan sukses dari flash session Laravel
+const flashSuccess = computed(() => page.props.flash?.success);
+
+// Menampilkan notifikasi otomatis saat ada flash message
+watch(flashSuccess, (newVal) => {
+    if (newVal) {
+        showSuccess.value = true;
+        setTimeout(() => showSuccess.value = false, 5000);
+    }
 });
 
 const form = useForm({
     partner_id: '',
     product_name: '',
-    initial_stock: 0,
-    base_price: 0,
-    markup: 0,
+    initial_stock: 1,
+    base_price: '', // Diubah ke string kosong agar placeholder terlihat
+    markup: 10,
+    shop_session_id: props.activeSessionId, 
 });
 
 const submit = () => {
-    form.post(route('pos.store'), {
-        onSuccess: () => form.reset(),
+    form.post(route('pos.store-open'), {
+        preserveScroll: true,
+        onSuccess: () => {
+            // Reset form kecuali partner agar input berkelanjutan lebih cepat
+            form.reset('product_name', 'initial_stock', 'base_price');
+        },
     });
 };
 </script>
 
 <template>
-    <div class="max-w-2xl mx-auto p-4 sm:p-6 lg:p-8">
-        <h2 class="text-2xl font-bold mb-6 text-gray-800">Open Shop - Add Consignment</h2>
-        
-        <form @submit.prevent="submit" class="space-y-6 bg-white p-6 rounded-lg shadow">
-            <div>
-                <label for="partner_id" class="block text-sm font-medium text-gray-700">Partner</label>
-                <select
-                    id="partner_id"
-                    v-model="form.partner_id"
-                    class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                    required
-                >
-                    <option value="" disabled>Select a partner</option>
-                    <option v-for="partner in partners" :key="partner.id" :value="partner.id">
-                        {{ partner.name }}
-                    </option>
-                </select>
-                <div v-if="form.errors.partner_id" class="text-red-500 text-sm mt-1">{{ form.errors.partner_id }}</div>
+    <div class="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 font-sans">
+        <div class="max-w-2xl mx-auto">
+            
+            <div class="mb-8">
+                <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight">
+                    Open Shop
+                </h2>
+                <p class="mt-2 text-sm text-gray-600">
+                    Tambahkan produk konsinyasi baru untuk memulai sesi penjualan hari ini.
+                </p>
             </div>
 
-            <div>
-                <label for="product_name" class="block text-sm font-medium text-gray-700">Product Name</label>
-                <input
-                    type="text"
-                    id="product_name"
-                    v-model="form.product_name"
-                    class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                    required
-                />
-                <div v-if="form.errors.product_name" class="text-red-500 text-sm mt-1">{{ form.errors.product_name }}</div>
-            </div>
-
-            <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-3">
-                <div>
-                    <label for="initial_stock" class="block text-sm font-medium text-gray-700">Initial Stock</label>
-                    <input
-                        type="number"
-                        id="initial_stock"
-                        v-model="form.initial_stock"
-                        min="0"
-                        class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                        required
-                    />
-                    <div v-if="form.errors.initial_stock" class="text-red-500 text-sm mt-1">{{ form.errors.initial_stock }}</div>
+            <transition name="slide-fade">
+                <div v-if="showSuccess && flashSuccess" 
+                     class="mb-6 p-4 bg-emerald-50 border-l-4 border-emerald-500 rounded-r-lg shadow-sm flex items-center justify-between">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 text-emerald-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                        </svg>
+                        <p class="text-sm font-medium text-emerald-800">{{ flashSuccess }}</p>
+                    </div>
+                    <button @click="showSuccess = false" class="text-emerald-500 hover:text-emerald-700">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
                 </div>
+            </transition>
 
-                <div>
-                    <label for="base_price" class="block text-sm font-medium text-gray-700">Base Price</label>
-                    <input
-                        type="number"
-                        id="base_price"
-                        v-model="form.base_price"
-                        min="0"
-                        step="0.01"
-                        class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                        required
-                    />
-                    <div v-if="form.errors.base_price" class="text-red-500 text-sm mt-1">{{ form.errors.base_price }}</div>
-                </div>
+            <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+                <form @submit.prevent="submit" class="p-8 space-y-6">
+                    
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Partner / Supplier</label>
+                        <select v-model="form.partner_id" 
+                                class="w-full bg-gray-50 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm py-3"
+                                :class="{'border-red-400 ring-red-100': form.errors.partner_id}" required>
+                            <option value="" disabled>Pilih Partner...</option>
+                            <option v-for="partner in partners" :key="partner.id" :value="partner.id">{{ partner.name }}</option>
+                        </select>
+                        <p v-if="form.errors.partner_id" class="mt-2 text-xs text-red-500">{{ form.errors.partner_id }}</p>
+                    </div>
 
-                <div>
-                    <label for="markup" class="block text-sm font-medium text-gray-700">Markup (%)</label>
-                    <input
-                        type="number"
-                        id="markup"
-                        v-model="form.markup"
-                        min="0"
-                        class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                        required
-                    />
-                    <div v-if="form.errors.markup" class="text-red-500 text-sm mt-1">{{ form.errors.markup }}</div>
-                </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Nama Produk</label>
+                        <input v-model="form.product_name" type="text" placeholder="Contoh: Keripik Singkong Madu"
+                               class="w-full bg-gray-50 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm py-3"
+                               :class="{'border-red-400': form.errors.product_name}" required />
+                        <p v-if="form.errors.product_name" class="mt-2 text-xs text-red-500">{{ form.errors.product_name }}</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Stok Awal</label>
+                            <input v-model="form.initial_stock" type="number" min="1"
+                                   class="w-full bg-gray-50 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm py-3" required />
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Harga Dasar (Rp)</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">Rp</span>
+                                <input v-model="form.base_price" type="number" placeholder="0"
+                                       class="w-full bg-gray-50 border-gray-200 rounded-xl pl-10 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm py-3" required />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Markup (%)</label>
+                            <select v-model="form.markup" class="w-full bg-gray-50 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all sm:text-sm py-3">
+                                <option :value="5">5%</option>
+                                <option :value="10">10%</option>
+                                <option :value="15">15%</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="pt-4">
+                        <button type="submit" :disabled="form.processing"
+                                class="w-full flex justify-center items-center py-4 px-6 border border-transparent rounded-xl shadow-lg text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                            <span v-if="form.processing" class="flex items-center">
+                                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Memproses...
+                            </span>
+                            <span v-else>Simpan & Buka Toko</span>
+                        </button>
+                    </div>
+                </form>
             </div>
-
-            <div class="flex justify-end">
-                <button
-                    type="submit"
-                    :disabled="form.processing"
-                    class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-                >
-                    Save Consignment
-                </button>
-            </div>
-        </form>
+        </div>
     </div>
 </template>
+
+<style scoped>
+/* Animasi Notifikasi */
+.slide-fade-enter-active {
+    transition: all 0.3s ease-out;
+}
+.slide-fade-leave-active {
+    transition: all 0.2s cubic-bezier(1, 0.5, 0.8, 1);
+}
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+    transform: translateY(-20px);
+    opacity: 0;
+}
+</style>

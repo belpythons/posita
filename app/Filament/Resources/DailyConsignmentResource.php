@@ -22,10 +22,18 @@ class DailyConsignmentResource extends Resource
     {
         return $form
             ->schema([
+                Forms\Components\Select::make('shop_session_id')
+                    ->relationship('shopSession', 'id')
+                    ->label('Shop Session')
+                    ->helperText('Link this consignment to a shop session (optional)'),
+
                 Forms\Components\DatePicker::make('date')
+                    ->default(now())
                     ->required(),
                 Forms\Components\Select::make('partner_id')
-                    ->relationship('partner', 'name'),
+                    ->relationship('partner', 'name')
+                    ->searchable()
+                    ->preload(),
                 Forms\Components\TextInput::make('manual_partner_name'),
                 Forms\Components\TextInput::make('product_name')
                     ->required(),
@@ -34,28 +42,35 @@ class DailyConsignmentResource extends Resource
                     ->required(),
                 Forms\Components\TextInput::make('base_price')
                     ->numeric()
-                    ->prefix('$'),
+                    ->prefix('Rp')
+                    ->required(),
                 Forms\Components\TextInput::make('markup_percentage')
                     ->numeric()
-                    ->suffix('%'),
+                    ->suffix('%')
+                    ->default(0),
                 Forms\Components\TextInput::make('selling_price')
                     ->numeric()
-                    ->prefix('$'),
+                    ->prefix('Rp'),
                 Forms\Components\TextInput::make('remaining_stock')
-                    ->numeric(),
+                    ->numeric()
+                    ->default(0),
                 Forms\Components\TextInput::make('quantity_sold')
-                    ->numeric(),
+                    ->numeric()
+                    ->default(0),
                 Forms\Components\TextInput::make('total_revenue')
                     ->numeric()
-                    ->prefix('$'),
+                    ->prefix('Rp')
+                    ->default(0),
                 Forms\Components\TextInput::make('total_profit')
                     ->numeric()
-                    ->prefix('$'),
+                    ->prefix('Rp')
+                    ->default(0),
                 Forms\Components\Select::make('status')
                     ->options([
                         'open' => 'Open',
                         'closed' => 'Closed',
                     ])
+                    ->default('open')
                     ->required(),
                 Forms\Components\Select::make('disposition')
                     ->options([
@@ -66,33 +81,36 @@ class DailyConsignmentResource extends Resource
                     ->columnSpanFull(),
                 Forms\Components\Select::make('input_by_user_id')
                     ->relationship('inputByUser', 'name')
+                    ->default(fn() => auth()->id())
                     ->required(),
-            ])
-            ->disabled(); // Make the entire form read-only
+            ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table
+            // Fix N+1 Query: Eager load relations
+            ->modifyQueryUsing(fn(Builder $query) => $query->with(['partner', 'shopSession', 'inputByUser']))
             ->columns([
                 Tables\Columns\TextColumn::make('date')
                     ->date()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('partner.name')
                     ->label('Partner')
-                    ->sortable(),
+                    ->sortable()
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('product_name')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('selling_price')
-                    ->money()
+                    ->money('IDR')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('quantity_sold')
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('total_profit')
-                    ->money()
+                    ->money('IDR')
                     ->sortable()
-                    ->summarize(Tables\Columns\Summarizers\Sum::make()->label('Total')),
+                    ->summarize(Tables\Columns\Summarizers\Sum::make()->money('IDR')->label('Total')),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->color(fn(string $state): string => match ($state) {
@@ -100,20 +118,23 @@ class DailyConsignmentResource extends Resource
                         'closed' => 'danger',
                     }),
             ])
+            ->defaultSort('date', 'desc')
             ->filters([
                 Tables\Filters\Filter::make('date')
                     ->form([
-                        Forms\Components\DatePicker::make('date_from'),
-                        Forms\Components\DatePicker::make('date_until'),
+                        Forms\Components\DatePicker::make('created_from')
+                            ->label('Dari Tanggal'),
+                        Forms\Components\DatePicker::make('created_until')
+                            ->label('Sampai Tanggal'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
                             ->when(
-                                $data['date_from'],
+                                $data['created_from'],
                                 fn(Builder $query, $date): Builder => $query->whereDate('date', '>=', $date),
                             )
                             ->when(
-                                $data['date_until'],
+                                $data['created_until'],
                                 fn(Builder $query, $date): Builder => $query->whereDate('date', '<=', $date),
                             );
                     }),
@@ -122,12 +143,20 @@ class DailyConsignmentResource extends Resource
                         'open' => 'Open',
                         'closed' => 'Closed',
                     ]),
+                Tables\Filters\SelectFilter::make('partner_id')
+                    ->relationship('partner', 'name')
+                    ->label('Partner')
+                    ->searchable()
+                    ->preload(),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
+                Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
-                //
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
             ]);
     }
 
@@ -149,8 +178,10 @@ class DailyConsignmentResource extends Resource
     {
         return [
             'index' => Pages\ListDailyConsignments::route('/'),
-            // 'create' => Pages\CreateDailyConsignment::route('/create'), // Read-only, so no create
+            'create' => Pages\CreateDailyConsignment::route('/create'),
             'view' => Pages\ViewDailyConsignment::route('/{record}'),
+            'edit' => Pages\EditDailyConsignment::route('/{record}/edit'),
         ];
     }
 }
+

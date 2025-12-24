@@ -49,18 +49,18 @@ class ActivityLogResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('created_at')
-                    ->label('Time')
+                    ->label('Waktu')
                     ->dateTime('d M Y H:i:s')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('causer.name')
-                    ->label('User')
+                    ->label('Pelaku')
                     ->searchable()
                     ->default('System'),
                 Tables\Columns\TextColumn::make('description')
-                    ->label('Activity')
+                    ->label('Aktivitas')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('subject_type')
-                    ->label('Subject')
+                    ->label('Pada Data')
                     ->formatStateUsing(fn($state) => class_basename($state))
                     ->badge(),
                 Tables\Columns\TextColumn::make('properties')
@@ -79,7 +79,10 @@ class ActivityLogResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('causer_id')
                     ->label('User')
-                    ->relationship('causer', 'name')
+                    ->options(function () {
+                        return \App\Models\User::pluck('name', 'id');
+                    })
+                    ->visible(fn() => \App\Models\User::exists()) // Safety check
                     ->searchable()
                     ->preload(),
                 Tables\Filters\Filter::make('created_at')
@@ -115,12 +118,12 @@ class ActivityLogResource extends Resource
                             ])->columns(2),
                         Forms\Components\Section::make('Changes')
                             ->schema([
-                                Forms\Components\KeyValue::make('properties.old')
+                                Forms\Components\KeyValue::make('old_data')
                                     ->label('Old Data')
-                                    ->state(fn($record) => $record->properties['old'] ?? []),
-                                Forms\Components\KeyValue::make('properties.attributes')
+                                    ->afterStateHydrated(fn($component, $record) => $component->state($record->properties['old'] ?? [])),
+                                Forms\Components\KeyValue::make('new_data')
                                     ->label('New Data')
-                                    ->state(fn($record) => $record->properties['attributes'] ?? []),
+                                    ->afterStateHydrated(fn($component, $record) => $component->state($record->properties['attributes'] ?? [])),
                             ])->columns(2)
                     ]),
             ])

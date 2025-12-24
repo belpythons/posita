@@ -2,16 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\DailyConsignment;
-use App\Models\ShopSession;
+use App\Models\DailyConsignment; //Clay-X
 use App\Models\Partner;
-use App\Http\Requests\CloseDailyShopRequest;
-use App\Actions\Consignment\StartDailyShopAction;
-use App\Actions\Consignment\CloseDailyShopAction;
+use App\Http\Requests\CloseDailyShopRequest; //Clay-X
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Http\RedirectResponse;
 
 class PosController extends Controller
 {
@@ -78,65 +75,57 @@ class PosController extends Controller
      */
     public function createOpen(): Response
     {
-        $partners = Partner::where('is_active', true)->get();
-
         return Inertia::render('Pos/OpenShop', [
-            'partners' => $partners,
+            'partners' => Partner::where('is_active', true)
+                ->select(['id', 'name'])
+                ->get()
         ]);
     }
 
     /**
-     * Store new daily consignments.
+     * Menyimpan data produk konsinyasi baru menggunakan StartDailyShopAction.
+     * * @param Request $request
+     * @param StartDailyShopAction $startDailyShopAction
+     * @return RedirectResponse
      */
-    public function storeOpen(Request $request)
+    public function storeOpen(Request $request, StartDailyShopAction $startDailyShopAction): RedirectResponse
     {
+        // 1. Validasi Input Dasar
+        // Kita validasi 'markup' hanya boleh 5, 10, atau 15 sesuai permintaan.
         $validated = $request->validate([
-            'partner_id' => 'required|exists:partners,id',
-            'product_name' => 'required|string|max:255',
-            'initial_stock' => 'required|integer|min:0',
-            'base_price' => 'required|numeric|min:0',
-            'markup' => 'required|integer|min:0', // assuming markup is percentage e.g. 10 for 10%
+            'partner_id'    => 'required|exists:partners,id',
+            'product_name'  => 'required|string|max:255',
+            'initial_stock' => 'required|integer|min:1',
+            'base_price'    => 'required|numeric|min:0',
+            'markup'        => 'required|in:5,10,15', 
+            'shop_session_id' => 'nullable|integer', // Optional, tergantung sistem sesi teman Anda
         ]);
 
-        $basePrice = $validated['base_price'];
-        $markupPercent = $validated['markup'];
+        try {
 
-        // selling_price = base_price + (base_price * markup / 100)
-        $sellingPrice = $basePrice + ($basePrice * $markupPercent / 100);
+            $dataForAction = [
+                'partner_id'        => $validated['partner_id'],
+                'product_name'      => $validated['product_name'],
+                'initial_stock'     => $validated['initial_stock'],
+                'base_price'        => $validated['base_price'],
+                'markup_percentage' => (int) $validated['markup'], 
+                'shop_session_id'   => $validated['shop_session_id'] ?? null,
+            ];
 
-        DailyConsignment::create([
-            'date' => now(), // or $request->date if we allow backdating
-            'partner_id' => $validated['partner_id'],
-            'product_name' => $validated['product_name'],
-            'initial_stock' => $validated['initial_stock'],
-            'base_price' => $basePrice,
-            'markup_percentage' => $markupPercent,
-            'selling_price' => $sellingPrice,
-            'remaining_stock' => $validated['initial_stock'], // initially same as initial
-            'quantity_sold' => 0,
-            'total_revenue' => 0,
-            'total_profit' => 0,
-            'status' => 'open',
-            'input_by_user_id' => Auth::id(),
-        ]);
+            $startDailyShopAction->execute($request->user(), $dataForAction);
 
-        return redirect()->route('pos.dashboard')->with('success', 'Product added to daily supply.');
+            return redirect()
+                ->back()
+                ->with('success', 'Produk ' . $validated['product_name'] . ' berhasil ditambahkan!'); 
+            
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors(['error' => $e->getMessage()]);
+        }
     }
 
-    /**
-     * Show form to close shop (reconcile daily consignments).
-     */
-    public function createClose(): Response
+    public function index(): Response
     {
-        // Get today's open consignments
-        $consignments = DailyConsignment::with('partner')
-            ->whereDate('date', now())
-            ->where('status', 'open')
-            ->get();
-
-        return Inertia::render('Pos/CloseShop', [
-            'consignments' => $consignments,
-        ]);
+        return Inertia::render('Pos/Dashboard');
     }
 
     /**
@@ -160,12 +149,8 @@ class PosController extends Controller
             }) //Clay-X
             ->where('status', '!=', 'closed') //Clay-X
             ->select([ //Clay-X
-                'id',
-                'product_name',
-                'initial_stock',
-                'remaining_stock', //Clay-X
-                'selling_price',
-                'base_price' //Clay-X
+                'id', 'product_name', 'initial_stock', 'remaining_stock', //Clay-X
+                'selling_price', 'base_price' //Clay-X
             ]) //Clay-X
             ->get(); //Clay-X
 
@@ -175,66 +160,51 @@ class PosController extends Controller
 
     /**
      * Update (Close) daily shop session using CloseDailyShopAction.
-     *
-     * @param CloseDailyShopRequest $request
-     * @param ShopSession $shopSession
-     * @param CloseDailyShopAction $closeDailyShopAction
-     * @return RedirectResponse|\Illuminate\Http\JsonResponse
+     * //Clay-X
+     * @param \App\Http\Requests\CloseDailyShopRequest $request //Clay-X
+     * @param DailyConsignment $dailyConsignment //Clay-X
+     * @param \App\Actions\Consignment\CloseDailyShopAction $closeDailyShopAction //Clay-X
+     * @return \Illuminate\Http\RedirectResponse //Clay-X
      */
     public function updateClose(
-        CloseDailyShopRequest $request,
-        ShopSession $shopSession,
-        CloseDailyShopAction $closeDailyShopAction
-    ): RedirectResponse|\Illuminate\Http\JsonResponse {
-        // Pastikan session adalah shop session yang valid (belum closed)
-        if ($shopSession->status === 'closed') {
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Shop session is already closed.',
-                ], 422);
-            }
-            abort(422, 'Shop session is already closed.');
-        }
+        \App\Http\Requests\CloseDailyShopRequest $request, //Clay-X
+        DailyConsignment $dailyConsignment, //Clay-X
+        \App\Actions\Consignment\CloseDailyShopAction $closeDailyShopAction //Clay-X
+    ) { //Clay-X
+        // Clay-X: Pastikan session adalah shop session yang valid (memiliki start_cash)
+        if ($dailyConsignment->start_cash === null) { //Clay-X
+            abort(404, 'Not a shop session.'); //Clay-X
+        } //Clay-X
 
-        // Validasi bahwa shop_session_id dari request sesuai dengan route parameter
-        $validated = $request->validated();
-        if (isset($validated['shop_session_id']) && (int) $validated['shop_session_id'] !== $shopSession->id) {
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Shop session ID mismatch.',
-                ], 422);
-            }
-            abort(422, 'Shop session ID mismatch.');
-        }
+        // Clay-X: Ambil validated data dari request
+        $validated = $request->validated(); //Clay-X
 
-        try {
-            // Panggil action untuk menutup shop dan hitung profit
-            $result = $closeDailyShopAction->execute(
-                $shopSession,
-                $validated['items'],
-                (float) $validated['actual_cash']
-            );
+        try { //Clay-X
+            // Clay-X: Panggil action untuk menutup shop dan hitung profit
+            $result = $closeDailyShopAction->execute( //Clay-X
+                $dailyConsignment, //Clay-X
+                $validated['items'], //Clay-X
+                $validated['actual_cash'] //Clay-X
+            ); //Clay-X
 
-            // Return response dengan data profit jika request adalah JSON API
-            if ($request->expectsJson()) {
-                return response()->json($result);
-            }
+            // Clay-X: Return response dengan data profit jika request adalah JSON API
+            if ($request->expectsJson()) { //Clay-X
+                return response()->json($result); //Clay-X
+            } //Clay-X
 
-            // Return redirect dengan success message untuk form submission
-            return redirect()->route('pos.dashboard')->with('success', $result['message']);
-        } catch (\Exception $e) {
-            // Handle exception dan return error response
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => $e->getMessage(),
-                ], 422);
-            }
+            // Clay-X: Return redirect dengan success message untuk form submission
+            return redirect()->route('pos.dashboard')->with('success', $result['message']); //Clay-X
+        } catch (\Exception $e) { //Clay-X
+            // Clay-X: Handle exception dan return error response
+            if ($request->expectsJson()) { //Clay-X
+                return response()->json([ //Clay-X
+                    'success' => false, //Clay-X
+                    'message' => $e->getMessage(), //Clay-X
+                ], 422); //Clay-X
+            } //Clay-X
 
-            // Return redirect dengan error message
-            return redirect()->back()->withErrors(['error' => $e->getMessage()]);
-        }
-    }
+            // Clay-X: Return redirect dengan error message
+            return redirect()->back()->withErrors(['error' => $e->getMessage()]); //Clay-X
+        } //Clay-X
+    } //Clay-X
 }
