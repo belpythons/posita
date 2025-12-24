@@ -1,213 +1,22 @@
-# POSITA - Point of Sales for UMKM Retailers
-
-**POSITA** adalah aplikasi Kasir (Point of Sales) modern yang dirancang khusus untuk membantu UMKM retail mengelola penjualan, stok konsinyasi, dan pelaporan harian. Aplikasi ini dibangun dengan arsitektur **Modern Monolith** yang memisahkan logika operasional kasir (Frontend) dan manajemen pusat (Admin Panel).
-
-## 🛠️ Tech Stack
-
-Project ini dibangun menggunakan teknologi terkini di ekosistem Laravel:
-
-* **Backend Framework:** Laravel 12
-* **Frontend Framework:** Vue.js 3 (via Inertia.js)
-* **Admin Panel:** FilamentPHP v3 (Super Admin Dashboard)
-* **Database:** MySQL
-* **Styling:** Tailwind CSS 4.0
-* **Audit Trail:** Spatie Activitylog
-* **Authentication:** Laravel Breeze (Customized with Role-based Guards)
-
----
-
-## 🏗️ Architecture & Design Patterns
-
-Untuk menjaga kode tetap bersih, mudah di-maintain, dan *scalable*, project ini menerapkan beberapa **Design Patterns** dan prinsip **Domain-Driven Design (DDD)** ringan:
-
-### 1. Action Pattern (Business Logic)
-Kami memindahkan logika bisnis yang kompleks dari Controller ke dalam **Action Classes**. Hal ini memastikan prinsip *DRY (Don't Repeat Yourself)*, di mana logika yang sama bisa dipanggil baik dari controller Vue maupun Filament.
-
-* **Lokasi:** `app/Actions/`
-* **Contoh:**
-    * `StartDailyShopAction`: Menangani validasi dan pembukaan sesi toko harian.
-    * `CloseDailyShopAction`: Menghitung varian kas, rekap penjualan, dan menutup sesi.
-
-### 2. ViewModel Pattern (Data Presentation)
-Untuk menghindari "Fat Controller", kami menggunakan **ViewModel** untuk mempersiapkan data yang akan dikirim ke tampilan (Inertia/Vue). ViewModel membungkus data dari berbagai model menjadi satu objek yang rapi.
-
-* **Lokasi:** `app/ViewModels/`
-* **Contoh:** `PosDashboardViewModel` menyiapkan data mitra, sesi aktif, dan statistik harian untuk dashboard kasir.
-
-### 3. Observer Pattern (Audit & Side Effects)
-Pencatatan log aktivitas (Audit Trail) dilakukan secara otomatis menggunakan **Observer Pattern**. Controller tidak perlu tahu tentang proses logging.
-
-* **Lokasi:** `app/Observers/`
-* **Contoh:** `DailyConsignmentObserver` otomatis mencatat log ke tabel `activity_log` setiap kali toko dibuka atau ditutup.
-
-### 4. Role-Based Access Control (Separated Auth)
-Sistem login dipisahkan secara ketat untuk keamanan:
-* **Super Admin:** Hanya bisa login via `/admin` (Filament Panel).
-* **Retailer (Kasir):** Hanya bisa login via `/login` (Inertia UI) dan akan di-redirect jika mencoba akses admin.
-
-### 📂 Struktur Folder Penting
-```text
-app/
-├── Actions/          <-- Logika Bisnis (Buka/Tutup Toko)
-├── Filament/         <-- Admin Panel Resources
-├── Http/
-│   ├── Controllers/  <-- Controller Tipis (Hanya memanggil Action)
-│   └── Middleware/   <-- Proteksi Role
-├── Models/
-├── Observers/        <-- Otomasi Activity Log
-└── ViewModels/       <-- Penyiapan Data View
-
-```
-
----
-
-## 👥 Tim & Pembagian Tugas (Jobdesk)
-
-Pengembangan fitur dibagi berdasarkan modul spesifik untuk efisiensi kerja:
-
-### 👨‍✈️ Belva (Team Lead & System Architect)
-
-* **Tanggung Jawab:** Integrasi sistem, keamanan, dan manajemen role.
-* **Implementasi:**
-* Refactoring kode menerapkan Design Patterns (Action, ViewModel, Observer).
-* Membuat proteksi Middleware & Login Redirect (Admin vs Retailer).
-* Implementasi `spatie/activitylog` pada Filament (`ActivityLogResource`).
-* Setup Server & Deployment.
-
-
-
-### 👨‍💻 Rivaldi (Fitur "Buka Kedai")
-
-* **Tanggung Jawab:** Alur pembukaan toko dan input stok awal.
-* **Implementasi:**
-* Backend: Logic `StartDailyShopAction`.
-* Frontend: Halaman `Pos/OpenShop.vue`.
-* Fitur: Input modal awal, pemilihan mitra, dan kalkulasi harga jual otomatis (Markup logic).
-
-
-
-### 👨‍💻 Amar (Fitur "Tutup Kedai")
-
-* **Tanggung Jawab:** Rekapitulasi harian dan penutupan buku.
-* **Implementasi:**
-* Backend: Logic `CloseDailyShopAction`.
-* Frontend: Halaman `Pos/CloseShop.vue`.
-* Fitur: Input uang aktual, kalkulasi selisih (variance), dan ringkasan penjualan harian.
-
-
-
-### 👩‍💻 Nurita (UI/UX & Theming)
-
-* **Tanggung Jawab:** Antarmuka pengguna dan pengalaman visual.
-* **Implementasi:**
-* Styling Global: Menentukan palet warna (Biru/Orange) dan Typography.
-* Komponen: Membuat `ToastNotification.vue`, Card Layout, dan responsivitas mobile.
-* Frontend: Memastikan transisi antar halaman (Inertia) berjalan mulus.
-
-
-
----
-
-## 🚀 Panduan Instalasi (Installation Guide)
-
-Ikuti langkah-langkah berikut untuk menjalankan project di local environment Anda:
-
-### Prasyarat
-
-* PHP >= 8.4
-* Composer
-* Node.js & NPM
-* MySQL
-
-### Langkah 1: Clone Repository
-
-```bash
-git clone [https://github.com/username/posita.git](https://github.com/username/posita.git)
+POSITA - Point of Sales & Inventory SystemAplikasi Kasir dan Manajemen Kedai berbasis web dengan arsitektur Laravel Inertia Vue dan Service Layer Pattern.🚀 Teknologi UtamaBackend: Laravel 11Frontend: Vue 3 + Inertia.jsStyling: Tailwind CSSDatabase: MySQL📂 Struktur Folder & ArsitekturProject ini menggunakan Service Layer Pattern untuk memisahkan logika bisnis dari Controller.1. Controllers (app/Http/Controllers)Hanya bertugas menerima request, memanggil Service, dan mengembalikan response (View).Admin/*: Controller khusus halaman Admin (Pemilik).Pos/*: Controller khusus halaman Kasir/Karyawan.2. Services (app/Services)Tempat semua logika bisnis ("Otak" aplikasi).ShopSessionService: Logika buka/tutup toko & hitung selisih uang.ConsignmentService: Logika input barang titipan & hitung bagi hasil.BoxOrderService: Logika pemesanan nasi kotak & upload bukti bayar.AdminDataService: CRUD master data (Partner, Template, User).3. Frontend Pages (resources/js/Pages)Admin/: Halaman-halaman dashboard admin.Pos/: Halaman-halaman operasional karyawan.Pos/Box/: Fitur khusus pemesanan box.🛠 Panduan Instalasi (Untuk Developer)Clone Repositorygit clone <repo_url>
 cd posita
 
-```
+Install Backend Dependenciescomposer install
 
-### Langkah 2: Install Dependencies
-
-Install paket PHP dan JavaScript:
-
-```bash
-composer install
-npm install
-
-```
-
-### Langkah 3: Konfigurasi Environment
-
-Salin file `.env.example` menjadi `.env`:
-
-```bash
-cp .env.example .env
-
-```
-
-Buka file `.env` dan sesuaikan konfigurasi database Anda:
-
-```ini
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_DATABASE=retailer
-DB_USERNAME=root
-DB_PASSWORD=
-
-```
-
-### Langkah 4: Generate Key & Migrate Database
-
-Generate application key dan jalankan migrasi database beserta seeder (data dummy):
-
-```bash
+Setup Environmentcp .env.example .env
+# Sesuaikan DB_DATABASE, DB_USERNAME, DB_PASSWORD di file .env
 php artisan key:generate
-php artisan migrate:fresh --seed
 
-```
+Migrasi Database (Fresh Install)php artisan migrate:fresh --seed
+# Ini akan membuat tabel users, partners, shop_sessions, daily_consignments, box_orders, dll.
 
-*> **PENTING:** Perintah `--seed` wajib dijalankan agar Anda memiliki akun Super Admin dan Retailer untuk login.*
+Install Frontend Dependenciesnpm install
+npm run build
 
-### Langkah 5: Jalankan Aplikasi
-
-Anda perlu menjalankan dua terminal terpisah:
-
-**Terminal 1 (Vite Development Server):**
-
-```bash
-npm run dev
-
-```
-
-**Terminal 2 (Laravel Server):**
-
-```bash
+Jalankan Server# Terminal 1
 php artisan serve
 
-```
+# Terminal 2 (Untuk Hot Reload saat development)
+npm run dev
 
-Akses aplikasi di: `http://localhost:8000`
-
----
-
-## 🔐 Akun Demo (Credentials)
-
-Gunakan akun berikut untuk pengujian sistem (dibuat oleh Seeder):
-
-### 1. Super Admin (Akses Filament Panel)
-
-* **URL:** `http://localhost:8000/admin`
-* **Email:** `admin@posita.test`
-* **Password:** `password`
-* *Fitur:* Manajemen User, Master Data Partner, Monitoring Activity Log.
-
-### 2. Retailer / Kasir (Akses POS Dashboard)
-
-* **URL:** `http://localhost:8000/login`
-* **Email:** `retailer@posita.test`
-* **Password:** `password`
-* *Fitur:* Buka Toko, Transaksi, Tutup Toko.
-
----
+👥 Pembagian Tugas (Job Desk)| Role | Developer | Fitur Utama || Admin & Core | Belva | Dashboard Admin, Master Data Partner, User Management, Database Schema. || POS System | Rivaldi | Buka Kedai (Input Stok), Tutup Kedai (Rekonsiliasi Kas), Laporan Harian. || Box Order | Amar | Katalog Paket Box, Form Pemesanan, Upload Bukti Bayar. || UI/UX | Nurita | Responsive Design (Mobile First), Layouting, Komponen Vue (Card, Modal, Badge). |⚠️ Aturan DevelopmentJangan Pakai Filament: Hapus folder app/Filament jika masih ada. Kita menggunakan Custom Vue Admin.Service Layer: Jangan taruh logika kompleks di Controller. Pindahkan ke app/Services.Mobile First: Pastikan tampilan karyawan (Pos/*) rapi saat dibuka di HP.
