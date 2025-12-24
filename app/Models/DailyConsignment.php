@@ -4,52 +4,41 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class DailyConsignment extends Model
 {
-    use \Spatie\Activitylog\Traits\LogsActivity;
+    use LogsActivity;
 
     protected $fillable = [
         'shop_session_id',
-        'date',
         'partner_id',
-        'manual_partner_name',
         'product_name',
-        'initial_stock',
+        'qty_initial',
+        'qty_sold',
+        'qty_remaining',
         'base_price',
-        'markup_percentage',
         'selling_price',
-        'remaining_stock',
-        'quantity_sold',
-        'total_revenue',
-        'total_profit',
-        'status',
-        'disposition',
-        'notes',
-        'input_by_user_id',
+        'markup_percent',
+        'subtotal_income',
     ];
 
     protected $casts = [
-        'date' => 'date',
-        'initial_stock' => 'integer',
         'base_price' => 'decimal:2',
-        'markup_percentage' => 'integer',
         'selling_price' => 'decimal:2',
-        'remaining_stock' => 'integer',
-        'quantity_sold' => 'integer',
-        'total_revenue' => 'decimal:2',
-        'total_profit' => 'decimal:2',
+        'subtotal_income' => 'decimal:2',
     ];
 
-    public function getActivitylogOptions(): \Spatie\Activitylog\LogOptions
+    public function getActivitylogOptions(): LogOptions
     {
-        return \Spatie\Activitylog\LogOptions::defaults()
+        return LogOptions::defaults()
             ->logOnly(['*'])
             ->logOnlyDirty();
     }
 
     /**
-     * Get the shop session this consignment belongs to.
+     * Get the shop session that owns this consignment.
      */
     public function shopSession(): BelongsTo
     {
@@ -65,11 +54,18 @@ class DailyConsignment extends Model
     }
 
     /**
-     * Get the user who input this consignment.
+     * Calculate and update subtotal income.
      */
-    public function inputByUser(): BelongsTo
+    public function calculateSubtotalIncome(): void
     {
-        return $this->belongsTo(User::class, 'input_by_user_id');
+        $this->subtotal_income = $this->qty_sold * $this->selling_price;
+    }
+
+    /**
+     * Get profit for this consignment.
+     */
+    public function getProfitAttribute(): float
+    {
+        return $this->qty_sold * ($this->selling_price - $this->base_price);
     }
 }
-

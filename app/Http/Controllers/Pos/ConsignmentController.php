@@ -63,7 +63,7 @@ class ConsignmentController extends Controller
             'product_name' => 'required|string|max:255',
             'qty_initial' => 'required|integer|min:1',
             'base_price' => 'required|numeric|min:0',
-            'markup_percent' => 'required|in:5,10,15',
+            'selling_price' => 'required|numeric|min:0',
         ]);
 
         $user = auth()->user();

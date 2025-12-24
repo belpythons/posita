@@ -2,6 +2,7 @@
 import EmployeeLayout from '@/Layouts/EmployeeLayout.vue';
 import { Head, useForm, Link } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
+import { formatMoney } from '@/utils/formatMoney';
 
 const props = defineProps({
     hasActiveSession: {
@@ -38,7 +39,7 @@ const form = useForm({
     product_name: '',
     qty_initial: '',
     base_price: '',
-    markup_percent: '10',
+    selling_price: '',
 });
 
 // Filter templates by selected partner
@@ -55,13 +56,9 @@ const selectPartner = (partnerId) => {
 const selectTemplate = (template) => {
     form.product_name = template.name;
     form.base_price = template.base_price;
-    form.markup_percent = template.default_markup_percent.toString();
+    // Use default_selling_price if available, otherwise leave empty for manual input
+    form.selling_price = template.default_selling_price || '';
 };
-
-const calculatedSellingPrice = computed(() => {
-    if (!form.base_price || !form.markup_percent) return 0;
-    return parseFloat(form.base_price) * (1 + parseFloat(form.markup_percent) / 100);
-});
 
 const submit = () => {
     form.post('/pos/consignment', {
@@ -71,19 +68,6 @@ const submit = () => {
             selectedPartnerId.value = '';
         },
     });
-};
-
-const formatCurrency = (value) => {
-    return new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        minimumFractionDigits: 0,
-    }).format(value || 0);
-};
-
-// Update sold quantity
-const updateSold = (consignment, qtySold) => {
-    useForm({ qty_sold: qtySold }).patch(`/pos/consignment/${consignment.id}/sold`);
 };
 </script>
 
@@ -109,11 +93,11 @@ const updateSold = (consignment, qtySold) => {
                 <div class="flex justify-between items-center">
                     <div>
                         <p class="text-sm text-blue-600">Total Item: {{ summary?.total_items || 0 }}</p>
-                        <p class="text-sm text-blue-600">Terjual: {{ summary?.total_qty_sold || 0 }} pcs</p>
+                        <p class="text-sm text-blue-600">Stok Awal Total: {{ summary?.total_qty_initial || 0 }} pcs</p>
                     </div>
                     <div class="text-right">
-                        <p class="text-sm text-blue-600">Pendapatan</p>
-                        <p class="font-bold text-blue-800">{{ formatCurrency(summary?.total_income) }}</p>
+                        <p class="text-sm text-blue-600">Estimasi Nilai Stok</p>
+                        <p class="font-bold text-blue-800">{{ formatMoney(summary?.total_stock_value) }}</p>
                     </div>
                 </div>
             </div>
@@ -141,31 +125,13 @@ const updateSold = (consignment, qtySold) => {
                             <p class="font-medium">{{ item.product_name }}</p>
                             <p class="text-sm text-gray-500">{{ item.partner?.name }}</p>
                         </div>
-                        <p class="text-green-600 font-medium">{{ formatCurrency(item.selling_price) }}</p>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <div class="text-sm text-gray-600">
-                            <span>Stok: {{ item.qty_initial }}</span>
-                            <span class="mx-2">|</span>
-                            <span>Sisa: {{ item.qty_remaining }}</span>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <label class="text-sm text-gray-600">Terjual:</label>
-                            <input
-                                :value="item.qty_sold"
-                                @change="updateSold(item, $event.target.value)"
-                                type="number"
-                                min="0"
-                                :max="item.qty_initial"
-                                class="w-16 border rounded px-2 py-1 text-center"
-                            />
+                        <div class="text-right">
+                            <p class="text-green-600 font-medium">{{ formatMoney(item.selling_price) }}</p>
+                            <p class="text-xs text-gray-400">Modal: {{ formatMoney(item.base_price) }}</p>
                         </div>
                     </div>
-                    <div class="mt-2 pt-2 border-t text-sm">
-                        <span class="text-gray-500">Subtotal:</span>
-                        <span class="font-medium text-green-600 ml-1">
-                            {{ formatCurrency(item.subtotal_income) }}
-                        </span>
+                    <div class="flex items-center justify-between text-sm text-gray-600">
+                        <span>Stok Awal: {{ item.qty_initial }} pcs</span>
                     </div>
                 </div>
             </div>
@@ -240,45 +206,48 @@ const updateSold = (consignment, qtySold) => {
                         />
                     </div>
 
-                    <!-- Base Price -->
+                    <!-- Base Price (Buying Price) -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Harga Modal</label>
-                        <input
-                            v-model="form.base_price"
-                            type="number"
-                            min="0"
-                            class="w-full border rounded-lg px-3 py-2"
-                            required
-                        />
-                    </div>
-
-                    <!-- Markup -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Markup</label>
-                        <div class="flex gap-2">
-                            <button
-                                v-for="markup in [5, 10, 15]"
-                                :key="markup"
-                                type="button"
-                                @click="form.markup_percent = markup.toString()"
-                                :class="[
-                                    'flex-1 py-2 rounded-lg border transition-colors',
-                                    form.markup_percent == markup.toString()
-                                        ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                        : 'border-gray-200'
-                                ]"
-                            >
-                                {{ markup }}%
-                            </button>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Harga Modal (Beli)</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">Rp</span>
+                            <input
+                                v-model="form.base_price"
+                                type="number"
+                                min="0"
+                                class="w-full border rounded-lg pl-10 pr-4 py-2"
+                                required
+                            />
                         </div>
                     </div>
 
-                    <!-- Calculated Selling Price -->
-                    <div class="bg-gray-50 p-3 rounded-lg">
-                        <p class="text-sm text-gray-600">Harga Jual:</p>
-                        <p class="text-xl font-bold text-green-600">
-                            {{ formatCurrency(calculatedSellingPrice) }}
-                        </p>
+                    <!-- Selling Price (Manual Input - Replacing Markup) -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Harga Jual</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">Rp</span>
+                            <input
+                                v-model="form.selling_price"
+                                type="number"
+                                min="0"
+                                class="w-full border rounded-lg pl-10 pr-4 py-2"
+                                placeholder="Masukkan harga jual"
+                                required
+                            />
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">Tentukan harga jual secara manual</p>
+                    </div>
+
+                    <!-- Profit Preview -->
+                    <div v-if="form.base_price && form.selling_price" class="bg-gray-50 p-3 rounded-lg">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Profit per item:</span>
+                            <span 
+                                :class="(form.selling_price - form.base_price) >= 0 ? 'text-green-600 font-medium' : 'text-red-600 font-medium'"
+                            >
+                                {{ formatMoney(form.selling_price - form.base_price) }}
+                            </span>
+                        </div>
                     </div>
 
                     <button

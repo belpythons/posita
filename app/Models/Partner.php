@@ -4,14 +4,17 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 class Partner extends Model
 {
-    use \Spatie\Activitylog\Traits\LogsActivity;
+    use LogsActivity;
 
     protected $fillable = [
         'name',
         'phone',
+        'address',
         'is_active',
     ];
 
@@ -19,18 +22,24 @@ class Partner extends Model
         'is_active' => 'boolean',
     ];
 
-    public function getActivitylogOptions(): \Spatie\Activitylog\LogOptions
+    public function getActivitylogOptions(): LogOptions
     {
-        return \Spatie\Activitylog\LogOptions::defaults()
+        return LogOptions::defaults()
             ->logOnly(['*'])
             ->logOnlyDirty();
     }
 
+    /**
+     * Get the product templates for this partner.
+     */
     public function productTemplates(): HasMany
     {
         return $this->hasMany(ProductTemplate::class);
     }
 
+    /**
+     * Get the daily consignments for this partner.
+     */
     public function dailyConsignments(): HasMany
     {
         return $this->hasMany(DailyConsignment::class);
