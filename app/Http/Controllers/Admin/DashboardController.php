@@ -32,10 +32,9 @@ class DashboardController extends Controller
         // Get today's shop sessions for sales summary
         $todaySessions = $this->shopSessionService->getTodaySessions();
 
-        // Calculate daily sales total
-        $dailySalesTotal = $todaySessions->sum(function ($session) {
-            return $session->consignments->sum('subtotal_income');
-        });
+        // Get daily summary (includes box orders)
+        $dailySummary = $this->dashboardService->getDailySummary();
+        $dailySalesTotal = $dailySummary['total_revenue'];
 
         // Get pending box orders
         $pendingBoxOrders = $this->boxOrderService->getPendingOrders();
@@ -43,25 +42,41 @@ class DashboardController extends Controller
         // Get box order statistics
         $boxOrderStats = $this->dashboardService->getBoxOrderStats();
 
-        // Get chart data
-        $weeklyRevenue = $this->dashboardService->getWeeklyRevenue();
-        $monthlyRevenue = $this->dashboardService->getMonthlyRevenue();
+        // Get chart data using centralized method
+        $trendData = [
+            'daily' => $this->dashboardService->getSalesTrend('daily'),
+            'weekly' => $this->dashboardService->getSalesTrend('weekly'),
+            'monthly' => $this->dashboardService->getSalesTrend('monthly'),
+        ];
 
         // Get quick stats
         $quickStats = $this->dashboardService->getQuickStats();
 
-        // Get sales trend (today vs yesterday)
-        $salesTrend = $this->dashboardService->getSalesTrend();
+        // Get sales comparison (today vs yesterday)
+        $salesComparison = $this->dashboardService->getSalesComparison();
+
+        // Get global profit
+        $globalProfit = $this->dashboardService->getGlobalProfit();
+
+        // Get history data
+        $sessionHistory = $this->dashboardService->getSessionHistory(10);
+        $boxOrderHistory = $this->dashboardService->getBoxOrderHistory(10);
 
         return Inertia::render('Admin/Dashboard', [
             'dailySalesTotal' => $dailySalesTotal,
-            'salesTrend' => $salesTrend,
+            'salesTrend' => $salesComparison, // Today vs Yesterday
+            'trendData' => $trendData, // Chart data: daily, weekly, monthly
             'pendingBoxOrders' => $pendingBoxOrders,
             'boxOrderStats' => $boxOrderStats,
             'todaySessions' => $todaySessions,
             'quickStats' => $quickStats,
-            'weeklyRevenue' => $weeklyRevenue,
-            'monthlyRevenue' => $monthlyRevenue,
+            // Legacy props for backward compatibility
+            'dailyRevenue' => $trendData['daily']['data'],
+            'weeklyRevenue' => $trendData['weekly']['data'],
+            'monthlyRevenue' => $trendData['monthly']['data'],
+            'globalProfit' => $globalProfit,
+            'sessionHistory' => $sessionHistory,
+            'boxOrderHistory' => $boxOrderHistory,
         ]);
     }
 

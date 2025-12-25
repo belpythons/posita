@@ -5,72 +5,234 @@ namespace App\Services;
 use App\Models\BoxOrder;
 use App\Models\ShopSession;
 use Carbon\Carbon;
-use Illuminate\Support\Collection;
+use Carbon\CarbonPeriod;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 
 class DashboardService
 {
     /**
-     * Get weekly revenue data for charts.
+     * Centralized sales trend method with dynamic date filtering.
+     * 
+     * @param string $range 'daily' | 'weekly' | 'monthly'
+     * @return array Chart data with zero-filled dates
      */
-    public function getWeeklyRevenue(): array
+    public function getSalesTrend(string $range = 'daily'): array
+    {
+        return match ($range) {
+            'daily' => $this->getDailyTrend(),
+            'weekly' => $this->getWeeklyTrend(),
+            'monthly' => $this->getMonthlyTrend(),
+            default => $this->getDailyTrend(),
+        };
+    }
+
+    /**
+     * Get daily trend for last 7 days.
+     * Zero-fills dates with no transactions.
+     */
+    private function getDailyTrend(): array
     {
         $startDate = Carbon::now()->subDays(6)->startOfDay();
         $endDate = Carbon::now()->endOfDay();
+        $period = CarbonPeriod::create($startDate, '1 day', $endDate);
 
-        $sessions = ShopSession::whereBetween('opened_at', [$startDate, $endDate])
-            ->where('status', 'closed')
-            ->with('consignments')
-            ->get();
+        // Get session revenue grouped by date
+        $sessionRevenue = $this->getSessionRevenueByDate($startDate, $endDate, 'Y-m-d');
+
+        // Get box order revenue grouped by date
+        $boxRevenue = $this->getBoxOrderRevenueByDate($startDate, $endDate, 'Y-m-d');
 
         $data = [];
-        for ($i = 6; $i >= 0; $i--) {
-            $date = Carbon::now()->subDays($i);
-            $dayRevenue = $sessions
-                ->filter(fn($s) => Carbon::parse($s->opened_at)->isSameDay($date))
-                ->sum(fn($s) => $s->consignments->sum('subtotal_income'));
+        foreach ($period as $date) {
+            $key = $date->format('Y-m-d');
+            $sessionAmount = $sessionRevenue[$key] ?? 0;
+            $boxAmount = $boxRevenue[$key] ?? 0;
 
             $data[] = [
-                'date' => $date->format('D'),
-                'full_date' => $date->format('Y-m-d'),
-                'revenue' => $dayRevenue,
+                'label' => $date->translatedFormat('D'), // Sen, Sel, Rab...
+                'full_date' => $key,
+                'revenue' => $sessionAmount + $boxAmount,
+                'session_revenue' => $sessionAmount,
+                'box_revenue' => $boxAmount,
             ];
         }
 
-        return $data;
+        return [
+            'range' => 'daily',
+            'period' => '7 hari terakhir',
+            'data' => $data,
+            'total' => array_sum(array_column($data, 'revenue')),
+        ];
     }
 
     /**
-     * Get monthly revenue data for charts.
+     * Get weekly trend for last 4 weeks.
+     * Zero-fills weeks with no transactions.
      */
-    public function getMonthlyRevenue(): array
+    private function getWeeklyTrend(): array
     {
-        $startDate = Carbon::now()->subMonths(5)->startOfMonth();
+        $data = [];
+
+        for ($i = 3; $i >= 0; $i--) {
+            $weekStart = Carbon::now()->subWeeks($i)->startOfWeek();
+            $weekEnd = Carbon::now()->subWeeks($i)->endOfWeek();
+
+            // Get session revenue for this week
+            $sessionAmount = ShopSession::whereBetween('opened_at', [$weekStart, $weekEnd])
+                ->where('status', 'closed')
+                ->with('consignments')
+                ->get()
+                ->sum(fn($s) => $s->consignments->sum('subtotal_income'));
+
+            // Get box order revenue for this week
+            $boxAmount = BoxOrder::whereBetween('created_at', [$weekStart, $weekEnd])
+                ->whereIn('status', ['paid', 'completed'])
+                ->sum('total_price');
+
+            $weekNumber = 4 - $i;
+            $data[] = [
+                'label' => "Minggu {$weekNumber}",
+                'full_date' => $weekStart->format('Y-m-d'),
+                'date_range' => $weekStart->format('d M') . ' - ' . $weekEnd->format('d M'),
+                'revenue' => (float) $sessionAmount + (float) $boxAmount,
+                'session_revenue' => (float) $sessionAmount,
+                'box_revenue' => (float) $boxAmount,
+            ];
+        }
+
+        return [
+            'range' => 'weekly',
+            'period' => '4 minggu terakhir',
+            'data' => $data,
+            'total' => array_sum(array_column($data, 'revenue')),
+        ];
+    }
+
+    /**
+     * Get monthly trend for last 12 months.
+     * Zero-fills months with no transactions.
+     */
+    private function getMonthlyTrend(): array
+    {
+        $startDate = Carbon::now()->subMonths(11)->startOfMonth();
         $endDate = Carbon::now()->endOfMonth();
 
-        $sessions = ShopSession::whereBetween('opened_at', [$startDate, $endDate])
+        // Get session revenue grouped by month
+        $sessionRevenue = ShopSession::whereBetween('opened_at', [$startDate, $endDate])
             ->where('status', 'closed')
             ->with('consignments')
-            ->get();
+            ->get()
+            ->groupBy(fn($s) => Carbon::parse($s->opened_at)->format('Y-m'))
+            ->map(fn($group) => $group->sum(fn($s) => $s->consignments->sum('subtotal_income')));
+
+        // Get box order revenue grouped by month
+        $boxRevenue = BoxOrder::whereBetween('created_at', [$startDate, $endDate])
+            ->whereIn('status', ['paid', 'completed'])
+            ->get()
+            ->groupBy(fn($o) => Carbon::parse($o->created_at)->format('Y-m'))
+            ->map(fn($group) => $group->sum('total_price'));
 
         $data = [];
-        for ($i = 5; $i >= 0; $i--) {
+        for ($i = 11; $i >= 0; $i--) {
             $month = Carbon::now()->subMonths($i);
-            $monthRevenue = $sessions
-                ->filter(fn($s) => Carbon::parse($s->opened_at)->format('Y-m') === $month->format('Y-m'))
-                ->sum(fn($s) => $s->consignments->sum('subtotal_income'));
+            $key = $month->format('Y-m');
+            $sessionAmount = $sessionRevenue[$key] ?? 0;
+            $boxAmount = $boxRevenue[$key] ?? 0;
 
             $data[] = [
-                'month' => $month->format('M'),
-                'full_month' => $month->format('Y-m'),
-                'revenue' => $monthRevenue,
+                'label' => $month->translatedFormat('M'), // Jan, Feb, Mar...
+                'full_date' => $key,
+                'revenue' => (float) $sessionAmount + (float) $boxAmount,
+                'session_revenue' => (float) $sessionAmount,
+                'box_revenue' => (float) $boxAmount,
             ];
         }
 
-        return $data;
+        return [
+            'range' => 'monthly',
+            'period' => '12 bulan terakhir',
+            'data' => $data,
+            'total' => array_sum(array_column($data, 'revenue')),
+        ];
     }
 
     /**
-     * Get daily sales summary.
+     * Get session revenue grouped by date.
+     * Uses efficient query with eager loading.
+     */
+    private function getSessionRevenueByDate(Carbon $startDate, Carbon $endDate, string $format): array
+    {
+        return ShopSession::whereBetween('opened_at', [$startDate, $endDate])
+            ->where('status', 'closed')
+            ->with('consignments')
+            ->get()
+            ->groupBy(fn($s) => Carbon::parse($s->opened_at)->format($format))
+            ->map(fn($group) => $group->sum(fn($s) => $s->consignments->sum('subtotal_income')))
+            ->toArray();
+    }
+
+    /**
+     * Get box order revenue grouped by date.
+     * Uses efficient query.
+     */
+    private function getBoxOrderRevenueByDate(Carbon $startDate, Carbon $endDate, string $format): array
+    {
+        return BoxOrder::whereBetween('created_at', [$startDate, $endDate])
+            ->whereIn('status', ['paid', 'completed'])
+            ->get()
+            ->groupBy(fn($o) => Carbon::parse($o->created_at)->format($format))
+            ->map(fn($group) => $group->sum('total_price'))
+            ->toArray();
+    }
+
+    /**
+     * Get comparison between today and yesterday.
+     * Combines ShopSession + BoxOrder revenue.
+     */
+    public function getSalesComparison(): array
+    {
+        $today = Carbon::today();
+        $yesterday = Carbon::yesterday();
+
+        // Today's sales
+        $todaySessionSales = ShopSession::whereDate('opened_at', $today)
+            ->with('consignments')
+            ->get()
+            ->sum(fn($s) => $s->consignments->sum('subtotal_income'));
+
+        $todayBoxSales = BoxOrder::whereDate('created_at', $today)
+            ->whereIn('status', ['paid', 'completed'])
+            ->sum('total_price');
+
+        // Yesterday's sales
+        $yesterdaySessionSales = ShopSession::whereDate('opened_at', $yesterday)
+            ->with('consignments')
+            ->get()
+            ->sum(fn($s) => $s->consignments->sum('subtotal_income'));
+
+        $yesterdayBoxSales = BoxOrder::whereDate('created_at', $yesterday)
+            ->whereIn('status', ['paid', 'completed'])
+            ->sum('total_price');
+
+        $todaySales = (float) $todaySessionSales + (float) $todayBoxSales;
+        $yesterdaySales = (float) $yesterdaySessionSales + (float) $yesterdayBoxSales;
+
+        // Calculate trend percentage
+        $trendPercent = $yesterdaySales > 0
+            ? round((($todaySales - $yesterdaySales) / $yesterdaySales) * 100, 1)
+            : ($todaySales > 0 ? 100 : 0);
+
+        return [
+            'today' => $todaySales,
+            'yesterday' => $yesterdaySales,
+            'trend_percent' => $trendPercent,
+            'trend_direction' => $trendPercent > 0 ? 'up' : ($trendPercent < 0 ? 'down' : 'flat'),
+        ];
+    }
+
+    /**
+     * Get daily summary for a specific date.
      */
     public function getDailySummary(string $date = null): array
     {
@@ -80,18 +242,24 @@ class DashboardService
             ->with(['user', 'consignments'])
             ->get();
 
-        $totalRevenue = $sessions->sum(fn($s) => $s->consignments->sum('subtotal_income'));
-        $totalProfit = $sessions->sum(function ($s) {
+        $boxOrders = BoxOrder::whereDate('created_at', $date)
+            ->whereIn('status', ['paid', 'completed'])
+            ->get();
+
+        $sessionRevenue = $sessions->sum(fn($s) => $s->consignments->sum('subtotal_income'));
+        $sessionProfit = $sessions->sum(function ($s) {
             return $s->consignments->sum(fn($c) => ($c->selling_price - $c->base_price) * $c->qty_sold);
         });
-        $totalItemsSold = $sessions->sum(fn($s) => $s->consignments->sum('qty_sold'));
+        $boxRevenue = $boxOrders->sum('total_price');
 
         return [
             'date' => $date->format('Y-m-d'),
             'total_sessions' => $sessions->count(),
-            'total_revenue' => $totalRevenue,
-            'total_profit' => $totalProfit,
-            'total_items_sold' => $totalItemsSold,
+            'total_revenue' => (float) $sessionRevenue + (float) $boxRevenue,
+            'session_revenue' => (float) $sessionRevenue,
+            'box_revenue' => (float) $boxRevenue,
+            'total_profit' => (float) $sessionProfit + (float) $boxRevenue,
+            'total_items_sold' => $sessions->sum(fn($s) => $s->consignments->sum('qty_sold')),
             'sessions' => $sessions,
         ];
     }
@@ -106,10 +274,12 @@ class DashboardService
 
         return [
             'today_orders' => BoxOrder::whereDate('created_at', $today)->count(),
-            'today_revenue' => BoxOrder::whereDate('created_at', $today)->sum('total_price'),
+            'today_revenue' => (float) BoxOrder::whereDate('created_at', $today)
+                ->whereIn('status', ['paid', 'completed'])->sum('total_price'),
             'pending_orders' => BoxOrder::where('status', 'pending')->count(),
             'month_orders' => BoxOrder::where('created_at', '>=', $thisMonth)->count(),
-            'month_revenue' => BoxOrder::where('created_at', '>=', $thisMonth)->sum('total_price'),
+            'month_revenue' => (float) BoxOrder::where('created_at', '>=', $thisMonth)
+                ->whereIn('status', ['paid', 'completed'])->sum('total_price'),
             'upcoming_pickups' => BoxOrder::where('pickup_datetime', '>=', Carbon::now())
                 ->where('status', '!=', 'cancelled')
                 ->orderBy('pickup_datetime')
@@ -133,47 +303,94 @@ class DashboardService
     }
 
     /**
-     * Get sales trend comparing today vs yesterday.
-     * Handles division by zero and provides trend direction.
+     * Get global profit calculation.
      */
-    public function getSalesTrend(): array
+    public function getGlobalProfit(): array
     {
         $today = Carbon::today();
-        $yesterday = Carbon::yesterday();
+        $thisMonth = Carbon::now()->startOfMonth();
 
-        // Get today's closed sessions and calculate sales
-        $todaySales = ShopSession::whereDate('opened_at', $today)
+        // Today's profit
+        $todaySessionProfit = ShopSession::whereDate('opened_at', $today)
+            ->where('status', 'closed')
             ->with('consignments')
             ->get()
-            ->sum(fn($s) => $s->consignments->sum('subtotal_income'));
+            ->sum(fn($s) => $s->consignments->sum(fn($c) => ($c->selling_price - $c->base_price) * $c->qty_sold));
 
-        // Get yesterday's closed sessions and calculate sales
-        $yesterdaySales = ShopSession::whereDate('opened_at', $yesterday)
+        $todayBoxProfit = BoxOrder::whereDate('created_at', $today)
+            ->whereIn('status', ['paid', 'completed'])
+            ->sum('total_price');
+
+        // Month's profit
+        $monthSessionProfit = ShopSession::where('opened_at', '>=', $thisMonth)
+            ->where('status', 'closed')
             ->with('consignments')
             ->get()
-            ->sum(fn($s) => $s->consignments->sum('subtotal_income'));
+            ->sum(fn($s) => $s->consignments->sum(fn($c) => ($c->selling_price - $c->base_price) * $c->qty_sold));
 
-        // Calculate trend percentage, handling division by zero
-        if ($yesterdaySales > 0) {
-            $trendPercent = round((($todaySales - $yesterdaySales) / $yesterdaySales) * 100, 1);
-        } else {
-            // If no sales yesterday, show 100% if there are sales today, 0% otherwise
-            $trendPercent = $todaySales > 0 ? 100 : 0;
-        }
-
-        // Determine trend direction
-        $trendDirection = 'flat';
-        if ($trendPercent > 0) {
-            $trendDirection = 'up';
-        } elseif ($trendPercent < 0) {
-            $trendDirection = 'down';
-        }
+        $monthBoxProfit = BoxOrder::where('created_at', '>=', $thisMonth)
+            ->whereIn('status', ['paid', 'completed'])
+            ->sum('total_price');
 
         return [
-            'today' => (float) $todaySales,
-            'yesterday' => (float) $yesterdaySales,
-            'trend_percent' => $trendPercent,
-            'trend_direction' => $trendDirection,
+            'today_profit' => (float) $todaySessionProfit + (float) $todayBoxProfit,
+            'today_session_profit' => (float) $todaySessionProfit,
+            'today_box_profit' => (float) $todayBoxProfit,
+            'month_profit' => (float) $monthSessionProfit + (float) $monthBoxProfit,
+            'month_session_profit' => (float) $monthSessionProfit,
+            'month_box_profit' => (float) $monthBoxProfit,
         ];
+    }
+
+    /**
+     * Get session history for dashboard display.
+     */
+    public function getSessionHistory(int $limit = 20): Collection
+    {
+        return ShopSession::with(['user', 'consignments'])
+            ->orderBy('opened_at', 'desc')
+            ->limit($limit)
+            ->get();
+    }
+
+    /**
+     * Get box order history for dashboard display.
+     * Sorted: pending first, then by created_at desc.
+     */
+    public function getBoxOrderHistory(int $limit = 20): Collection
+    {
+        return BoxOrder::with(['template', 'items'])
+            ->orderByRaw("CASE WHEN status = 'pending' THEN 0 ELSE 1 END")
+            ->orderBy('created_at', 'desc')
+            ->limit($limit)
+            ->get();
+    }
+
+    // ========================================
+    // Legacy methods for backward compatibility
+    // ========================================
+
+    /**
+     * @deprecated Use getSalesTrend('daily') instead
+     */
+    public function getDailyRevenue(): array
+    {
+        return $this->getSalesTrend('daily')['data'];
+    }
+
+    /**
+     * @deprecated Use getSalesTrend('weekly') instead
+     */
+    public function getWeeklyRevenue(): array
+    {
+        return $this->getSalesTrend('weekly')['data'];
+    }
+
+    /**
+     * @deprecated Use getSalesTrend('monthly') instead
+     */
+    public function getMonthlyRevenue(): array
+    {
+        return $this->getSalesTrend('monthly')['data'];
     }
 }
