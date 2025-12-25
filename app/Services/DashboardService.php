@@ -131,4 +131,49 @@ class DashboardService
             'total_box_templates' => \App\Models\BoxTemplate::where('is_active', true)->count(),
         ];
     }
+
+    /**
+     * Get sales trend comparing today vs yesterday.
+     * Handles division by zero and provides trend direction.
+     */
+    public function getSalesTrend(): array
+    {
+        $today = Carbon::today();
+        $yesterday = Carbon::yesterday();
+
+        // Get today's closed sessions and calculate sales
+        $todaySales = ShopSession::whereDate('opened_at', $today)
+            ->with('consignments')
+            ->get()
+            ->sum(fn($s) => $s->consignments->sum('subtotal_income'));
+
+        // Get yesterday's closed sessions and calculate sales
+        $yesterdaySales = ShopSession::whereDate('opened_at', $yesterday)
+            ->with('consignments')
+            ->get()
+            ->sum(fn($s) => $s->consignments->sum('subtotal_income'));
+
+        // Calculate trend percentage, handling division by zero
+        if ($yesterdaySales > 0) {
+            $trendPercent = round((($todaySales - $yesterdaySales) / $yesterdaySales) * 100, 1);
+        } else {
+            // If no sales yesterday, show 100% if there are sales today, 0% otherwise
+            $trendPercent = $todaySales > 0 ? 100 : 0;
+        }
+
+        // Determine trend direction
+        $trendDirection = 'flat';
+        if ($trendPercent > 0) {
+            $trendDirection = 'up';
+        } elseif ($trendPercent < 0) {
+            $trendDirection = 'down';
+        }
+
+        return [
+            'today' => (float) $todaySales,
+            'yesterday' => (float) $yesterdaySales,
+            'trend_percent' => $trendPercent,
+            'trend_direction' => $trendDirection,
+        ];
+    }
 }

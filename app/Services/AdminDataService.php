@@ -154,7 +154,7 @@ class AdminDataService
             'partner_id' => $data['partner_id'],
             'name' => $data['name'],
             'base_price' => $data['base_price'],
-            'default_markup_percent' => $data['default_markup_percent'] ?? 10,
+            'default_selling_price' => $data['default_selling_price'] ?? null,
             'is_active' => $data['is_active'] ?? true,
         ]);
     }
@@ -168,7 +168,7 @@ class AdminDataService
             'partner_id' => $data['partner_id'] ?? $template->partner_id,
             'name' => $data['name'] ?? $template->name,
             'base_price' => $data['base_price'] ?? $template->base_price,
-            'default_markup_percent' => $data['default_markup_percent'] ?? $template->default_markup_percent,
+            'default_selling_price' => $data['default_selling_price'] ?? $template->default_selling_price,
             'is_active' => $data['is_active'] ?? $template->is_active,
         ]);
 

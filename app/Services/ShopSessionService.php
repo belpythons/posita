@@ -110,12 +110,12 @@ class ShopSessionService
         // Generate notes
         $closingNotes = sprintf(
             "Total Pendapatan: Rp %s\nTotal Profit: Rp %s\nKas Awal: Rp %s\nKas Akhir Sistem: Rp %s\nKas Akhir Aktual: Rp %s\nSelisih: Rp %s%s",
-            number_format($summary['total_income'], 0, ',', '.'),
-            number_format($summary['total_profit'], 0, ',', '.'),
-            number_format($session->opening_cash, 0, ',', '.'),
-            number_format($summary['expected_cash'], 0, ',', '.'),
-            number_format($actualCash, 0, ',', '.'),
-            number_format($discrepancy, 0, ',', '.'),
+            number_format((float) ($summary['total_income'] ?? 0), 0, ',', '.'),
+            number_format((float) ($summary['total_profit'] ?? 0), 0, ',', '.'),
+            number_format((float) ($session->opening_cash ?? 0), 0, ',', '.'),
+            number_format((float) ($summary['expected_cash'] ?? 0), 0, ',', '.'),
+            number_format((float) ($actualCash ?? 0), 0, ',', '.'),
+            number_format((float) ($discrepancy ?? 0), 0, ',', '.'),
             $notes ? "\nCatatan: " . $notes : ''
         );
 

@@ -50,8 +50,12 @@ class DashboardController extends Controller
         // Get quick stats
         $quickStats = $this->dashboardService->getQuickStats();
 
+        // Get sales trend (today vs yesterday)
+        $salesTrend = $this->dashboardService->getSalesTrend();
+
         return Inertia::render('Admin/Dashboard', [
             'dailySalesTotal' => $dailySalesTotal,
+            'salesTrend' => $salesTrend,
             'pendingBoxOrders' => $pendingBoxOrders,
             'boxOrderStats' => $boxOrderStats,
             'todaySessions' => $todaySessions,
