@@ -1,7 +1,7 @@
 <script setup>
 import EmployeeLayout from '@/Layouts/EmployeeLayout.vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { Head, Link, useForm, router } from '@inertiajs/vue3';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { formatMoney } from '@/utils/formatMoney';
 
 const props = defineProps({
@@ -19,12 +19,20 @@ const props = defineProps({
 const countdowns = ref({});
 let intervalId = null;
 
+// Track which orders have been notified (to avoid repeated alerts)
+const notifiedOrders = ref(new Set());
+
 // Modal state
 const showStatusModal = ref(false);
 const selectedOrder = ref(null);
 const statusForm = useForm({
     status: '',
+    payment_proof: null,
+    cancellation_reason: '',
 });
+
+// File input ref
+const fileInputRef = ref(null);
 
 // Calculate countdown for each order
 const updateCountdowns = () => {
@@ -35,6 +43,12 @@ const updateCountdowns = () => {
 
         if (diff <= 0) {
             countdowns.value[order.id] = { expired: true, text: 'Sudah lewat' };
+            
+            // Auto-notification when countdown reaches zero
+            if (!notifiedOrders.value.has(order.id) && order.status === 'pending') {
+                notifiedOrders.value.add(order.id);
+                showPickupNotification(order);
+            }
         } else {
             const days = Math.floor(diff / (1000 * 60 * 60 * 24));
             const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -53,6 +67,27 @@ const updateCountdowns = () => {
             };
         }
     });
+};
+
+// Show pickup notification modal
+const showPickupNotification = (order) => {
+    selectedOrder.value = order;
+    showNotificationModal.value = true;
+};
+
+// Notification modal state
+const showNotificationModal = ref(false);
+
+const closeNotificationModal = () => {
+    showNotificationModal.value = false;
+    selectedOrder.value = null;
+};
+
+const confirmFromNotification = () => {
+    closeNotificationModal();
+    if (selectedOrder.value) {
+        openStatusModal(selectedOrder.value);
+    }
 };
 
 onMounted(() => {
@@ -88,6 +123,8 @@ const getStatusText = (status) => {
 const openStatusModal = (order) => {
     selectedOrder.value = order;
     statusForm.status = order.status;
+    statusForm.payment_proof = null;
+    statusForm.cancellation_reason = '';
     showStatusModal.value = true;
 };
 
@@ -96,23 +133,70 @@ const closeStatusModal = () => {
     showStatusModal.value = false;
     selectedOrder.value = null;
     statusForm.reset();
+    if (fileInputRef.value) {
+        fileInputRef.value.value = '';
+    }
 };
+
+// Handle file selection
+const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+        statusForm.payment_proof = file;
+    }
+};
+
+// Check if payment proof is required
+const requiresPaymentProof = computed(() => {
+    if (!selectedOrder.value) return false;
+    return ['paid', 'completed'].includes(statusForm.status) && 
+           !selectedOrder.value.payment_proof_path;
+});
+
+// Check if cancellation reason is required
+const requiresCancellationReason = computed(() => {
+    return statusForm.status === 'cancelled';
+});
+
+// Check if form is valid
+const isFormValid = computed(() => {
+    if (statusForm.status === selectedOrder.value?.status) return false;
+    if (requiresPaymentProof.value && !statusForm.payment_proof) return false;
+    if (requiresCancellationReason.value && !statusForm.cancellation_reason.trim()) return false;
+    return true;
+});
 
 // Submit status change
 const submitStatusChange = () => {
-    statusForm.patch(`/pos/box/${selectedOrder.value.id}/status`, {
+    const formData = new FormData();
+    formData.append('status', statusForm.status);
+    formData.append('_method', 'PATCH');
+    
+    if (statusForm.payment_proof) {
+        formData.append('payment_proof', statusForm.payment_proof);
+    }
+    
+    if (statusForm.cancellation_reason) {
+        formData.append('cancellation_reason', statusForm.cancellation_reason);
+    }
+
+    router.post(`/pos/box/${selectedOrder.value.id}/status`, formData, {
+        forceFormData: true,
         onSuccess: () => {
             closeStatusModal();
+        },
+        onError: (errors) => {
+            console.error('Status update failed:', errors);
         },
     });
 };
 
 // Available status options
 const statusOptions = [
-    { value: 'pending', label: 'Menunggu', icon: '⏳' },
-    { value: 'paid', label: 'Lunas', icon: '💰' },
-    { value: 'completed', label: 'Selesai', icon: '✅' },
-    { value: 'cancelled', label: 'Batal', icon: '❌' },
+    { value: 'pending', label: 'Menunggu', icon: '⏳', description: 'Order belum dibayar' },
+    { value: 'paid', label: 'Lunas', icon: '💰', description: 'Pembayaran sudah diterima' },
+    { value: 'completed', label: 'Selesai', icon: '✅', description: 'Order sudah diambil' },
+    { value: 'cancelled', label: 'Batal', icon: '❌', description: 'Order dibatalkan' },
 ];
 </script>
 
@@ -199,6 +283,11 @@ const statusOptions = [
                                 </div>
                             </div>
                             
+                            <!-- Cancellation Reason -->
+                            <div v-if="order.status === 'cancelled' && order.cancellation_reason" class="mb-2 p-2 bg-red-50 rounded text-sm text-red-700">
+                                <span class="font-medium">Alasan batal:</span> {{ order.cancellation_reason }}
+                            </div>
+                            
                             <div class="flex justify-between items-center pt-2 border-t">
                                 <span class="font-bold text-green-600">{{ formatMoney(order.total_price) }}</span>
                                 <a
@@ -263,6 +352,11 @@ const statusOptions = [
                                 {{ order.items.map(i => i.product_name).join(', ') }}
                             </div>
                             
+                            <!-- Cancellation Reason -->
+                            <div v-if="order.status === 'cancelled' && order.cancellation_reason" class="mb-2 p-2 bg-red-50 rounded text-sm text-red-700">
+                                <span class="font-medium">Alasan batal:</span> {{ order.cancellation_reason }}
+                            </div>
+                            
                             <div class="flex justify-between items-center pt-2 border-t">
                                 <span class="font-bold text-green-600">{{ formatMoney(order.total_price) }}</span>
                                 <a
@@ -286,26 +380,80 @@ const statusOptions = [
                 class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
                 @click.self="closeStatusModal"
             >
-                <div class="bg-white rounded-lg w-full max-w-sm">
+                <div class="bg-white rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
                     <div class="p-4 border-b">
                         <h3 class="font-semibold text-gray-800">Ubah Status Order</h3>
                         <p class="text-sm text-gray-500">{{ selectedOrder?.customer_name }}</p>
                     </div>
-                    <div class="p-4 space-y-2">
-                        <button
-                            v-for="option in statusOptions"
-                            :key="option.value"
-                            @click="statusForm.status = option.value"
-                            :class="[
-                                'w-full p-3 rounded-lg border-2 text-left flex items-center gap-3 transition',
-                                statusForm.status === option.value 
-                                    ? 'border-blue-500 bg-blue-50' 
-                                    : 'border-gray-200 hover:border-gray-300'
-                            ]"
-                        >
-                            <span class="text-xl">{{ option.icon }}</span>
-                            <span class="font-medium">{{ option.label }}</span>
-                        </button>
+                    <div class="p-4 space-y-4">
+                        <!-- Status Selection -->
+                        <div class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">Pilih Status</label>
+                            <div class="space-y-2">
+                                <button
+                                    v-for="option in statusOptions"
+                                    :key="option.value"
+                                    @click="statusForm.status = option.value"
+                                    :class="[
+                                        'w-full p-3 rounded-lg border-2 text-left flex items-center gap-3 transition',
+                                        statusForm.status === option.value 
+                                            ? 'border-blue-500 bg-blue-50' 
+                                            : 'border-gray-200 hover:border-gray-300'
+                                    ]"
+                                >
+                                    <span class="text-xl">{{ option.icon }}</span>
+                                    <div>
+                                        <span class="font-medium block">{{ option.label }}</span>
+                                        <span class="text-xs text-gray-500">{{ option.description }}</span>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Payment Proof Upload (for paid/completed) -->
+                        <div v-if="requiresPaymentProof" class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">
+                                📷 Upload Bukti Pembayaran <span class="text-red-500">*</span>
+                            </label>
+                            <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-400 transition">
+                                <input
+                                    ref="fileInputRef"
+                                    type="file"
+                                    accept="image/*"
+                                    @change="handleFileChange"
+                                    class="hidden"
+                                    id="payment-proof-input"
+                                />
+                                <label for="payment-proof-input" class="cursor-pointer">
+                                    <div v-if="!statusForm.payment_proof" class="text-gray-500">
+                                        <p class="text-2xl mb-2">📤</p>
+                                        <p class="text-sm">Klik untuk upload gambar</p>
+                                        <p class="text-xs text-gray-400">JPG, PNG, max 5MB</p>
+                                    </div>
+                                    <div v-else class="text-green-600">
+                                        <p class="text-2xl mb-2">✅</p>
+                                        <p class="text-sm font-medium">{{ statusForm.payment_proof.name }}</p>
+                                        <p class="text-xs text-gray-400">Klik untuk ganti</p>
+                                    </div>
+                                </label>
+                            </div>
+                            <p v-if="selectedOrder?.payment_proof_path" class="text-xs text-green-600">
+                                ✓ Bukti pembayaran sudah ada sebelumnya
+                            </p>
+                        </div>
+                        
+                        <!-- Cancellation Reason (for cancelled) -->
+                        <div v-if="requiresCancellationReason" class="space-y-2">
+                            <label class="block text-sm font-medium text-gray-700">
+                                📝 Alasan Pembatalan <span class="text-red-500">*</span>
+                            </label>
+                            <textarea
+                                v-model="statusForm.cancellation_reason"
+                                class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                rows="3"
+                                placeholder="Masukkan alasan pembatalan order..."
+                            ></textarea>
+                        </div>
                     </div>
                     <div class="p-4 border-t flex gap-3">
                         <button
@@ -316,10 +464,47 @@ const statusOptions = [
                         </button>
                         <button
                             @click="submitStatusChange"
-                            :disabled="statusForm.processing || statusForm.status === selectedOrder?.status"
-                            class="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                            :disabled="statusForm.processing || !isFormValid"
+                            class="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             {{ statusForm.processing ? 'Menyimpan...' : 'Simpan' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </Teleport>
+
+        <!-- Pickup Deadline Notification Modal -->
+        <Teleport to="body">
+            <div 
+                v-if="showNotificationModal" 
+                class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            >
+                <div class="bg-white rounded-lg w-full max-w-sm text-center">
+                    <div class="p-6">
+                        <div class="text-5xl mb-4">⏰</div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">Waktu Pengambilan Tiba!</h3>
+                        <p class="text-gray-600 mb-4">
+                            Order untuk <strong>{{ selectedOrder?.customer_name }}</strong> sudah waktunya diambil.
+                        </p>
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                            <p class="text-sm text-yellow-800">
+                                Segera konfirmasi status order ini.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="p-4 border-t flex gap-3">
+                        <button
+                            @click="closeNotificationModal"
+                            class="flex-1 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                        >
+                            Nanti
+                        </button>
+                        <button
+                            @click="confirmFromNotification"
+                            class="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                        >
+                            Konfirmasi Status
                         </button>
                     </div>
                 </div>

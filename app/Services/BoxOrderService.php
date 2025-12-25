@@ -161,7 +161,24 @@ class BoxOrderService
     }
 
     /**
-     * Cancel an order.
+     * Cancel an order with a reason.
+     */
+    public function cancelOrderWithReason(BoxOrder $order, string $reason): BoxOrder
+    {
+        if ($order->isCompleted()) {
+            throw new \Exception('Order yang sudah selesai tidak dapat dibatalkan.');
+        }
+
+        $order->update([
+            'status' => 'cancelled',
+            'cancellation_reason' => $reason,
+        ]);
+
+        return $order->fresh();
+    }
+
+    /**
+     * Cancel an order (legacy, without reason).
      */
     public function cancelOrder(BoxOrder $order): BoxOrder
     {

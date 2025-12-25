@@ -107,18 +107,48 @@ class BoxOrderController extends Controller
     }
 
     /**
-     * Update order status.
+     * Update order status with conditional validation.
+     * - For paid/completed: requires payment_proof upload
+     * - For cancelled: requires cancellation_reason
      */
     public function updateStatus(Request $request, int $orderId): RedirectResponse
     {
-        $validated = $request->validate([
+        $rules = [
             'status' => 'required|in:pending,paid,completed,cancelled',
-        ]);
+        ];
+
+        // Conditional validation based on target status
+        $targetStatus = $request->input('status');
+
+        if (in_array($targetStatus, ['paid', 'completed'])) {
+            // If order doesn't have payment proof yet, require it
+            $order = BoxOrder::findOrFail($orderId);
+            if (!$order->payment_proof_path) {
+                $rules['payment_proof'] = 'required|image|max:5120';
+            }
+        }
+
+        if ($targetStatus === 'cancelled') {
+            $rules['cancellation_reason'] = 'required|string|max:1000';
+        }
+
+        $validated = $request->validate($rules);
 
         $order = BoxOrder::findOrFail($orderId);
 
         try {
-            $this->boxOrderService->updateOrderStatus($order, $validated['status']);
+            // Handle payment proof upload if provided
+            if ($request->hasFile('payment_proof')) {
+                $this->boxOrderService->uploadPaymentProof($order, $request->file('payment_proof'));
+                $order->refresh();
+            }
+
+            // Handle cancellation reason
+            if ($targetStatus === 'cancelled' && !empty($validated['cancellation_reason'])) {
+                $this->boxOrderService->cancelOrderWithReason($order, $validated['cancellation_reason']);
+            } else {
+                $this->boxOrderService->updateOrderStatus($order, $validated['status']);
+            }
 
             return redirect()
                 ->back()

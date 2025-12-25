@@ -16,6 +16,7 @@ class BoxOrder extends Model
         'pickup_datetime',
         'payment_proof_path',
         'status',
+        'cancellation_reason',
     ];
 
     protected $casts = [
