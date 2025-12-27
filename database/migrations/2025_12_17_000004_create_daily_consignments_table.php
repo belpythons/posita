@@ -14,6 +14,7 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('shop_session_id')->constrained('shop_sessions')->cascadeOnDelete();
             $table->foreignId('partner_id')->constrained('partners')->cascadeOnDelete();
+            $table->foreignId('product_template_id')->constrained('product_templates')->cascadeOnDelete();
             $table->string('product_name');
             $table->integer('qty_initial');
             $table->integer('qty_sold')->default(0);

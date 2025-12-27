@@ -16,6 +16,7 @@ return new class extends Migration {
             $table->foreignId('partner_id')->constrained('partners')->cascadeOnDelete();
             $table->string('name');
             $table->decimal('base_price', 12, 2);
+            $table->decimal('selling_price', 12, 2)->nullable();
             $table->decimal('default_selling_price', 12, 2)->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();

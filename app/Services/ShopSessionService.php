@@ -6,12 +6,14 @@ use App\Models\ShopSession;
 use App\Models\User;
 use Carbon\Carbon;
 
+// Nurita Wahuyuni | 202312061
+
 class ShopSessionService
 {
     /**
      * Start a new shop session.
      */
-    public function startSession(User $user, float $openingCash): ShopSession
+    public function startSession(User $user, float $openingCash, array $consignments = []): ShopSession
     {
         // Check if user already has an open session
         $existingSession = $this->getActiveSession($user);
@@ -19,12 +21,8 @@ class ShopSessionService
             throw new \Exception('Anda masih memiliki sesi toko yang aktif. Tutup sesi terlebih dahulu.');
         }
 
-        return ShopSession::create([
-            'user_id' => $user->id,
-            'opened_at' => Carbon::now(),
-            'opening_cash' => $openingCash,
-            'status' => 'open',
-        ]);
+        $action = new StartDailyShopAction();
+        return $action->execute($user, $openingCash, $consignments);    
     }
 
     /**

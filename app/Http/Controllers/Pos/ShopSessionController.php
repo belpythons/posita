@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Pos;
 
 use App\Http\Controllers\Controller;
 use App\Models\ShopSession;
+use App\Models\Partner;
 use App\Services\ConsignmentService;
 use App\Services\ReportService;
 use App\Services\ShopSessionService;
@@ -35,12 +36,18 @@ class ShopSessionController extends Controller
             ->where('status', 'closed')
             ->latest('closed_at')
             ->first();
+        
+        // Get active partners and their product templates
+        $partners = Partner::with(['productTemplates' => function ($q) {
+            $q->where('is_active', true);
+        }])->where('is_active', true)->get();
 
         return Inertia::render('Pos/OpenShop', [
             'hasActiveSession' => $hasActiveSession,
             'activeSession' => $activeSession,
             'lastClosedSession' => $lastClosedSession,
             'today' => today()->format('Y-m-d'),
+            'partners' => $partners,
         ]);
     }
 
@@ -51,12 +58,16 @@ class ShopSessionController extends Controller
     {
         $validated = $request->validate([
             'opening_cash' => 'required|numeric|min:0',
+            'consignments' => 'required|array|min:1',
+            'consignments.*.partner_id' => 'required|exists:partners,id',
+            'consignments.*.product_template_id' => 'required|exists:product_templates,id',
         ]);
 
         try {
             $session = $this->shopSessionService->startSession(
                 $request->user(),
-                (float) $validated['opening_cash']
+                (float) $validated['opening_cash'],
+                $validated['consignments']
             );
 
             return redirect()

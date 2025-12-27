@@ -3,6 +3,8 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\Pos;
+use App\Http\Controllers\Pos\ShopSessionController;
+use App\Http\Controllers\Pos\PosController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -64,6 +66,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'role:employee'])->prefix('pos')->name('pos.')->group(function () {
+    Route::get('/', [PosController::class, 'index'])->name('index');
     // Shop Session
     Route::get('/open', [Pos\ShopSessionController::class, 'create'])->name('session.create');
     Route::post('/open', [Pos\ShopSessionController::class, 'store'])->name('session.store');

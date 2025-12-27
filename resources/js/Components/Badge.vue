@@ -1,5 +1,8 @@
 <template>
-  <span :class="badgeClasses">
+  <span :class="[
+  'inline-flex items-center px-3 py-1.5 rounded-full text-[13px] font-semibold shadow-sm', 
+  variantClasses[variant]
+  ]">
     {{ label }}
   </span>
 </template>
