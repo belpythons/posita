@@ -145,6 +145,18 @@ class BoxOrderService
     }
 
     /**
+     * Get upcoming orders with time remaining calculated.
+     * Encapsulates business logic for countdown display.
+     */
+    public function getUpcomingOrdersWithCountdown(): Collection
+    {
+        return $this->getUpcomingOrders()->map(function ($order) {
+            $order->time_remaining = $order->getTimeRemainingAttribute();
+            return $order;
+        });
+    }
+
+    /**
      * Update order status.
      */
     public function updateOrderStatus(BoxOrder $order, string $status): BoxOrder

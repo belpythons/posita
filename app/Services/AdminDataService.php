@@ -7,10 +7,16 @@ use App\Models\Partner;
 use App\Models\ProductTemplate;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 
 class AdminDataService
 {
+    /**
+     * Cache TTL in seconds (1 hour).
+     */
+    private const CACHE_TTL = 3600;
+
     // =====================
     // USER MANAGEMENT
     // =====================
@@ -74,21 +80,25 @@ class AdminDataService
     }
 
     // =====================
-    // PARTNER MANAGEMENT
+    // PARTNER MANAGEMENT (with caching)
     // =====================
 
     /**
-     * Get all partners.
+     * Get all partners with caching.
      */
     public function getPartners(?bool $activeOnly = null): Collection
     {
-        $query = Partner::query();
+        $cacheKey = 'partners:' . ($activeOnly === null ? 'all' : ($activeOnly ? 'active' : 'inactive'));
 
-        if ($activeOnly !== null) {
-            $query->where('is_active', $activeOnly);
-        }
+        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($activeOnly) {
+            $query = Partner::query();
 
-        return $query->with('productTemplates')->orderBy('name')->get();
+            if ($activeOnly !== null) {
+                $query->where('is_active', $activeOnly);
+            }
+
+            return $query->with('productTemplates')->orderBy('name')->get();
+        });
     }
 
     /**
@@ -96,12 +106,16 @@ class AdminDataService
      */
     public function createPartner(array $data): Partner
     {
-        return Partner::create([
+        $partner = Partner::create([
             'name' => $data['name'],
             'phone' => $data['phone'] ?? null,
             'address' => $data['address'] ?? null,
             'is_active' => $data['is_active'] ?? true,
         ]);
+
+        $this->clearPartnerCache();
+
+        return $partner;
     }
 
     /**
@@ -116,6 +130,8 @@ class AdminDataService
             'is_active' => $data['is_active'] ?? $partner->is_active,
         ]);
 
+        $this->clearPartnerCache();
+
         return $partner->fresh();
     }
 
@@ -124,25 +140,41 @@ class AdminDataService
      */
     public function deletePartner(Partner $partner): bool
     {
-        return $partner->delete();
+        $result = $partner->delete();
+        $this->clearPartnerCache();
+        return $result;
+    }
+
+    /**
+     * Clear partner cache.
+     */
+    private function clearPartnerCache(): void
+    {
+        Cache::forget('partners:all');
+        Cache::forget('partners:active');
+        Cache::forget('partners:inactive');
     }
 
     // =====================
-    // PRODUCT TEMPLATE MANAGEMENT
+    // PRODUCT TEMPLATE MANAGEMENT (with caching)
     // =====================
 
     /**
-     * Get all product templates.
+     * Get all product templates with caching.
      */
     public function getProductTemplates(?int $partnerId = null): Collection
     {
-        $query = ProductTemplate::with('partner');
+        $cacheKey = 'product_templates:' . ($partnerId ?? 'all');
 
-        if ($partnerId) {
-            $query->where('partner_id', $partnerId);
-        }
+        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($partnerId) {
+            $query = ProductTemplate::with('partner');
 
-        return $query->orderBy('name')->get();
+            if ($partnerId) {
+                $query->where('partner_id', $partnerId);
+            }
+
+            return $query->orderBy('name')->get();
+        });
     }
 
     /**
@@ -150,13 +182,17 @@ class AdminDataService
      */
     public function createProductTemplate(array $data): ProductTemplate
     {
-        return ProductTemplate::create([
+        $template = ProductTemplate::create([
             'partner_id' => $data['partner_id'],
             'name' => $data['name'],
             'base_price' => $data['base_price'],
             'default_selling_price' => $data['default_selling_price'] ?? null,
             'is_active' => $data['is_active'] ?? true,
         ]);
+
+        $this->clearProductTemplateCache($data['partner_id']);
+
+        return $template;
     }
 
     /**
@@ -164,6 +200,8 @@ class AdminDataService
      */
     public function updateProductTemplate(ProductTemplate $template, array $data): ProductTemplate
     {
+        $oldPartnerId = $template->partner_id;
+
         $template->update([
             'partner_id' => $data['partner_id'] ?? $template->partner_id,
             'name' => $data['name'] ?? $template->name,
@@ -172,25 +210,45 @@ class AdminDataService
             'is_active' => $data['is_active'] ?? $template->is_active,
         ]);
 
+        $this->clearProductTemplateCache($oldPartnerId);
+        if (isset($data['partner_id']) && $data['partner_id'] !== $oldPartnerId) {
+            $this->clearProductTemplateCache($data['partner_id']);
+        }
+
         return $template->fresh();
     }
 
+    /**
+     * Clear product template cache.
+     */
+    private function clearProductTemplateCache(?int $partnerId = null): void
+    {
+        Cache::forget('product_templates:all');
+        if ($partnerId) {
+            Cache::forget("product_templates:{$partnerId}");
+        }
+    }
+
     // =====================
-    // BOX TEMPLATE MANAGEMENT
+    // BOX TEMPLATE MANAGEMENT (with caching)
     // =====================
 
     /**
-     * Get all box templates.
+     * Get all box templates with caching.
      */
     public function getBoxTemplates(?string $type = null): Collection
     {
-        $query = BoxTemplate::query();
+        $cacheKey = 'box_templates:' . ($type ?? 'all');
 
-        if ($type) {
-            $query->where('type', $type);
-        }
+        return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($type) {
+            $query = BoxTemplate::query();
 
-        return $query->orderBy('name')->get();
+            if ($type) {
+                $query->where('type', $type);
+            }
+
+            return $query->orderBy('name')->get();
+        });
     }
 
     /**
@@ -198,13 +256,17 @@ class AdminDataService
      */
     public function createBoxTemplate(array $data): BoxTemplate
     {
-        return BoxTemplate::create([
+        $template = BoxTemplate::create([
             'name' => $data['name'],
             'type' => $data['type'],
             'price' => $data['price'],
             'items_json' => $data['items_json'] ?? [],
             'is_active' => $data['is_active'] ?? true,
         ]);
+
+        $this->clearBoxTemplateCache();
+
+        return $template;
     }
 
     /**
@@ -220,6 +282,8 @@ class AdminDataService
             'is_active' => $data['is_active'] ?? $template->is_active,
         ]);
 
+        $this->clearBoxTemplateCache();
+
         return $template->fresh();
     }
 
@@ -228,6 +292,18 @@ class AdminDataService
      */
     public function deleteBoxTemplate(BoxTemplate $template): bool
     {
-        return $template->delete();
+        $result = $template->delete();
+        $this->clearBoxTemplateCache();
+        return $result;
+    }
+
+    /**
+     * Clear box template cache.
+     */
+    private function clearBoxTemplateCache(): void
+    {
+        Cache::forget('box_templates:all');
+        Cache::forget('box_templates:heavy_meal');
+        Cache::forget('box_templates:snack_box');
     }
 }

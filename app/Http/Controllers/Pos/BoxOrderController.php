@@ -25,14 +25,8 @@ class BoxOrderController extends Controller
      */
     public function index(): Response
     {
-        $upcomingOrders = $this->boxOrderService->getUpcomingOrders();
+        $upcomingOrders = $this->boxOrderService->getUpcomingOrdersWithCountdown();
         $todayOrders = $this->boxOrderService->getTodayOrders();
-
-        // Add time remaining to each order
-        $upcomingOrders = $upcomingOrders->map(function ($order) {
-            $order->time_remaining = $order->getTimeRemainingAttribute();
-            return $order;
-        });
 
         return Inertia::render('Pos/Box/Index', [
             'upcomingOrders' => $upcomingOrders,
