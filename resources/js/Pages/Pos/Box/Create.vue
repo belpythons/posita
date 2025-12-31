@@ -1,81 +1,64 @@
 <script setup>
-import EmployeeLayout from '@/Layouts/EmployeeLayout.vue';
-import { Head, useForm, Link } from '@inertiajs/vue3';
-import { ref, reactive, computed, watch } from 'vue';
-import { formatMoney } from '@/utils/formatMoney';
+import EmployeeLayout from "@/Layouts/EmployeeLayout.vue";
+import { Head, useForm, Link } from "@inertiajs/vue3";
+import { ref, computed, watch } from "vue";
+import { formatMoney } from "@/utils/formatMoney";
 
 const props = defineProps({
-    selectedTemplate: {
-        type: Object,
-        default: null,
-    },
-    boxTemplates: {
-        type: Array,
-        default: () => [],
-    },
+    selectedTemplate: { type: Object, default: null },
+    boxTemplates: { type: Array, default: () => [] },
 });
 
-// Selected template ID for dropdown
-const selectedTemplateId = ref('');
+const selectedTemplateId = ref("");
 
 const form = useForm({
-    customer_name: '',
-    pickup_datetime: '',
-    quantity: 1, // Number of boxes to order
+    customer_name: "",
+    box_template_id: null,
+    pickup_datetime: "",
+    quantity: 1,
     items: [],
 });
 
-// Watch for template selection and auto-fill items
 watch(selectedTemplateId, (newId) => {
+    form.box_template_id = newId || null;
     if (!newId) return;
-    
-    const template = props.boxTemplates.find(t => t.id === parseInt(newId));
+
+    const template = props.boxTemplates.find((t) => t.id === parseInt(newId));
     if (template && template.items_json) {
-        // Clear existing items and add template items
         form.items = [];
-        
-        // items_json is an array of item names, we need to create item objects
-        const itemNames = Array.isArray(template.items_json) 
-            ? template.items_json 
+        const itemNames = Array.isArray(template.items_json)
+            ? template.items_json
             : JSON.parse(template.items_json);
-            
-        itemNames.forEach(itemName => {
+
+        itemNames.forEach((itemName) => {
             form.items.push({
                 product_name: itemName,
                 quantity: 1,
-                unit_price: Math.round(template.price / itemNames.length), // Distribute price evenly
+                unit_price: Math.round(template.price / itemNames.length),
             });
         });
     }
 });
 
-// Add a new line item
 const addItem = () => {
-    form.items.push({
-        product_name: '',
-        quantity: 1,
-        unit_price: '',
-    });
+    form.items.push({ product_name: "", quantity: 1, unit_price: 0 });
 };
 
-// Remove a line item
 const removeItem = (index) => {
     form.items.splice(index, 1);
 };
 
-// Calculate subtotal (items only)
 const itemsSubtotal = computed(() => {
-    return form.items.reduce((sum, item) => {
-        return sum + (item.quantity * (item.unit_price || 0));
-    }, 0);
+    return form.items.reduce(
+        (sum, item) => sum + item.quantity * (item.unit_price || 0),
+        0
+    );
 });
 
-// Calculate grand total (items * box quantity)
-const calculatedTotal = computed(() => {
-    return itemsSubtotal.value * (form.quantity || 1);
-});
+const calculatedTotal = computed(
+    () => itemsSubtotal.value * (form.quantity || 1)
+);
 
-// Get minimum datetime (now + 1 hour)
 const minDateTime = computed(() => {
     const now = new Date();
     now.setHours(now.getHours() + 1);
@@ -83,25 +66,23 @@ const minDateTime = computed(() => {
 });
 
 const submit = () => {
-    form.post('/pos/box', {
+    form.post("/pos/box", {
         onSuccess: () => {
             form.reset();
+            selectedTemplateId.value = "";
         },
     });
 };
 
-// Clear template selection (for custom order)
 const clearTemplate = () => {
-    selectedTemplateId.value = '';
+    selectedTemplateId.value = "";
+    form.box_template_id = null;
     form.items = [];
     form.quantity = 1;
     addItem();
 };
 
-// Initialize with one empty item
-if (form.items.length === 0) {
-    addItem();
-}
+if (form.items.length === 0) addItem();
 </script>
 
 <template>
@@ -109,140 +90,133 @@ if (form.items.length === 0) {
 
     <EmployeeLayout>
         <template #header>
-            <h2 class="text-lg font-semibold text-gray-800">Buat Order Box</h2>
+            <h2 class="text-xl font-bold text-gray-800 tracking-tight">
+                Buat Pesanan Box Baru
+            </h2>
         </template>
 
-        <div class="max-w-lg mx-auto">
-            <div class="bg-white rounded-lg shadow p-6">
-                <form @submit.prevent="submit" class="space-y-4">
-                    <!-- Template Selection -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Template Box (Opsional)
-                        </label>
-                        <div class="flex gap-2">
-                            <select
-                                v-model="selectedTemplateId"
-                                class="flex-1 border rounded-lg px-3 py-2 text-sm"
-                            >
-                                <option value="">-- Pilih Template atau Input Manual --</option>
-                                <optgroup label="Heavy Meal">
-                                    <option 
-                                        v-for="template in boxTemplates.filter(t => t.type === 'heavy_meal')" 
-                                        :key="template.id" 
-                                        :value="template.id"
+        <div class="max-w-4xl mx-auto py-8 px-4">
+            <form
+                @submit.prevent="submit"
+                class="grid grid-cols-1 lg:grid-cols-3 gap-8"
+            >
+                <div class="lg:col-span-2 space-y-6">
+                    <section
+                        class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6"
+                    >
+                        <h3
+                            class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-6"
+                        >
+                            Informasi Dasar
+                        </h3>
+
+                        <div class="space-y-5">
+                            <div>
+                                <label
+                                    class="block text-sm font-semibold text-gray-700 mb-2"
+                                    >Pilih Template (Opsional)</label
+                                >
+                                <div class="relative group">
+                                    <select
+                                        v-model="selectedTemplateId"
+                                        class="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all appearance-none"
                                     >
-                                        {{ template.name }} - {{ formatMoney(template.price) }}
-                                    </option>
-                                </optgroup>
-                                <optgroup label="Snack Box">
-                                    <option 
-                                        v-for="template in boxTemplates.filter(t => t.type === 'snack_box')" 
-                                        :key="template.id" 
-                                        :value="template.id"
+                                        <option value="">
+                                            Input Manual / Kosongkan
+                                        </option>
+                                        <optgroup label="Heavy Meal">
+                                            <option
+                                                v-for="template in boxTemplates.filter(
+                                                    (t) =>
+                                                        t.type === 'heavy_meal'
+                                                )"
+                                                :key="template.id"
+                                                :value="template.id"
+                                            >
+                                                {{ template.name }}
+                                            </option>
+                                        </optgroup>
+                                        <optgroup label="Snack Box">
+                                            <option
+                                                v-for="template in boxTemplates.filter(
+                                                    (t) =>
+                                                        t.type === 'snack_box'
+                                                )"
+                                                :key="template.id"
+                                                :value="template.id"
+                                            >
+                                                {{ template.name }}
+                                            </option>
+                                        </optgroup>
+                                    </select>
+                                    <button
+                                        v-if="selectedTemplateId"
+                                        type="button"
+                                        @click="clearTemplate"
+                                        class="absolute right-3 top-2.5 text-gray-400 hover:text-red-500"
                                     >
-                                        {{ template.name }} - {{ formatMoney(template.price) }}
-                                    </option>
-                                </optgroup>
-                            </select>
-                            <button
-                                v-if="selectedTemplateId"
-                                type="button"
-                                @click="clearTemplate"
-                                class="px-3 py-2 text-sm text-gray-600 hover:text-red-600"
-                                title="Reset ke input manual"
-                            >
-                                ✕
-                            </button>
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            class="h-5 w-5"
+                                            viewBox="0 0 20 20"
+                                            fill="currentColor"
+                                        >
+                                            <path
+                                                fill-rule="evenodd"
+                                                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                                                clip-rule="evenodd"
+                                            />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label
+                                        class="block text-sm font-semibold text-gray-700 mb-2"
+                                        >Nama Pelanggan</label
+                                    >
+                                    <input
+                                        v-model="form.customer_name"
+                                        type="text"
+                                        placeholder="Masukkan nama..."
+                                        class="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500/20"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label
+                                        class="block text-sm font-semibold text-gray-700 mb-2"
+                                        >Waktu Pengambilan</label
+                                    >
+                                    <input
+                                        v-model="form.pickup_datetime"
+                                        type="datetime-local"
+                                        :min="minDateTime"
+                                        class="w-full bg-gray-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500/20"
+                                        required
+                                    />
+                                </div>
+                            </div>
                         </div>
-                        <p class="text-xs text-gray-500 mt-1">
-                            Pilih template untuk auto-fill, atau biarkan kosong untuk input manual
-                        </p>
-                    </div>
+                    </section>
 
-                    <!-- Customer Name -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Nama Pelanggan
-                        </label>
-                        <input
-                            v-model="form.customer_name"
-                            type="text"
-                            class="w-full border rounded-lg px-3 py-2"
-                            placeholder="Masukkan nama pelanggan"
-                            required
-                        />
-                        <p v-if="form.errors.customer_name" class="text-red-500 text-sm mt-1">
-                            {{ form.errors.customer_name }}
-                        </p>
-                    </div>
-
-                    <!-- Box Quantity -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Jumlah Box
-                        </label>
-                        <div class="flex items-center gap-3">
-                            <button
-                                type="button"
-                                @click="form.quantity = Math.max(1, form.quantity - 1)"
-                                class="w-10 h-10 bg-gray-100 rounded-lg text-xl font-bold hover:bg-gray-200"
+                    <section
+                        class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6"
+                    >
+                        <div class="flex justify-between items-center mb-6">
+                            <h3
+                                class="text-sm font-bold text-gray-400 uppercase tracking-widest"
                             >
-                                −
-                            </button>
-                            <input
-                                v-model.number="form.quantity"
-                                type="number"
-                                min="1"
-                                class="w-20 border rounded-lg px-3 py-2 text-center text-lg font-semibold"
-                                required
-                            />
-                            <button
-                                type="button"
-                                @click="form.quantity++"
-                                class="w-10 h-10 bg-gray-100 rounded-lg text-xl font-bold hover:bg-gray-200"
-                            >
-                                +
-                            </button>
-                            <span class="text-sm text-gray-500">box</span>
-                        </div>
-                        <p v-if="form.errors.quantity" class="text-red-500 text-sm mt-1">
-                            {{ form.errors.quantity }}
-                        </p>
-                    </div>
-
-                    <!-- Pickup DateTime -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Tanggal & Waktu Pengambilan
-                        </label>
-                        <input
-                            v-model="form.pickup_datetime"
-                            type="datetime-local"
-                            :min="minDateTime"
-                            class="w-full border rounded-lg px-3 py-2"
-                            required
-                        />
-                        <p v-if="form.errors.pickup_datetime" class="text-red-500 text-sm mt-1">
-                            {{ form.errors.pickup_datetime }}
-                        </p>
-                    </div>
-
-                    <!-- Line Items -->
-                    <div>
-                        <div class="flex justify-between items-center mb-3">
-                            <label class="block text-sm font-medium text-gray-700">
-                                Item per Box
-                                <span v-if="selectedTemplateId" class="text-xs text-blue-600 ml-1">
-                                    (dari template - bisa diedit)
-                                </span>
-                            </label>
+                                Detail Item (Per Box)
+                            </h3>
                             <button
                                 type="button"
                                 @click="addItem"
-                                class="text-sm bg-green-100 text-green-700 px-3 py-1 rounded-lg hover:bg-green-200"
+                                class="text-sm font-bold text-blue-600 hover:text-blue-700"
                             >
-                                + Tambah Item
+                                + Tambah Menu
                             </button>
                         </div>
 
@@ -250,96 +224,179 @@ if (form.items.length === 0) {
                             <div
                                 v-for="(item, index) in form.items"
                                 :key="index"
-                                class="bg-gray-50 rounded-lg p-3"
+                                class="flex gap-3 items-end group bg-gray-50/50 p-3 rounded-xl border border-transparent hover:border-gray-200 transition-all"
                             >
-                                <div class="flex items-start gap-2">
-                                    <div class="flex-1 grid grid-cols-3 gap-2">
-                                        <div class="col-span-3 sm:col-span-1">
-                                            <label class="block text-xs text-gray-500 mb-1">Nama</label>
-                                            <input
-                                                v-model="item.product_name"
-                                                type="text"
-                                                class="w-full border rounded px-2 py-1 text-sm"
-                                                placeholder="Nasi"
-                                                required
-                                            />
-                                        </div>
-                                        <div>
-                                            <label class="block text-xs text-gray-500 mb-1">Qty/Box</label>
-                                            <input
-                                                v-model.number="item.quantity"
-                                                type="number"
-                                                min="1"
-                                                class="w-full border rounded px-2 py-1 text-sm text-center"
-                                                required
-                                            />
-                                        </div>
-                                        <div>
-                                            <label class="block text-xs text-gray-500 mb-1">Harga</label>
-                                            <div class="relative">
-                                                <span class="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">Rp</span>
-                                                <input
-                                                    v-model.number="item.unit_price"
-                                                    type="number"
-                                                    min="0"
-                                                    class="w-full border rounded pl-7 pr-2 py-1 text-sm"
-                                                    required
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <button
-                                        v-if="form.items.length > 1"
-                                        type="button"
-                                        @click="removeItem(index)"
-                                        class="text-red-500 hover:text-red-700 mt-5"
+                                <div class="flex-1">
+                                    <label
+                                        class="text-[10px] font-bold text-gray-400 uppercase mb-1 block"
+                                        >Menu</label
                                     >
-                                        ✕
-                                    </button>
+                                    <input
+                                        v-model="item.product_name"
+                                        type="text"
+                                        class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500/10"
+                                        placeholder="..."
+                                        required
+                                    />
                                 </div>
-                                <div class="mt-2 text-right text-xs text-gray-500">
-                                    Subtotal: {{ formatMoney(item.quantity * (item.unit_price || 0)) }}
+                                <div class="w-20">
+                                    <label
+                                        class="text-[10px] font-bold text-gray-400 uppercase mb-1 block text-center"
+                                        >Qty</label
+                                    >
+                                    <input
+                                        v-model.number="item.quantity"
+                                        type="number"
+                                        class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-center focus:ring-2 focus:ring-blue-500/10"
+                                        required
+                                    />
                                 </div>
+                                <div class="w-32">
+                                    <label
+                                        class="text-[10px] font-bold text-gray-400 uppercase mb-1 block text-right"
+                                        >Harga</label
+                                    >
+                                    <input
+                                        v-model.number="item.unit_price"
+                                        type="number"
+                                        class="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-right focus:ring-2 focus:ring-blue-500/10"
+                                        required
+                                    />
+                                </div>
+                                <button
+                                    v-if="form.items.length > 1"
+                                    type="button"
+                                    @click="removeItem(index)"
+                                    class="p-2 text-gray-300 hover:text-red-500 transition-colors"
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        class="h-5 w-5"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                    >
+                                        <path
+                                            fill-rule="evenodd"
+                                            d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                            clip-rule="evenodd"
+                                        />
+                                    </svg>
+                                </button>
                             </div>
                         </div>
-                    </div>
+                    </section>
+                </div>
 
-                    <!-- Total Summary -->
-                    <div class="bg-blue-50 rounded-lg p-4 space-y-2">
-                        <div class="flex justify-between items-center text-sm">
-                            <span class="text-gray-600">Harga per Box</span>
-                            <span class="font-medium">{{ formatMoney(itemsSubtotal) }}</span>
-                        </div>
-                        <div class="flex justify-between items-center text-sm">
-                            <span class="text-gray-600">Jumlah Box</span>
-                            <span class="font-medium">× {{ form.quantity }}</span>
-                        </div>
-                        <div class="border-t pt-2 flex justify-between items-center">
-                            <span class="font-medium text-gray-700">Total</span>
-                            <span class="text-xl font-bold text-blue-600">
-                                {{ formatMoney(calculatedTotal) }}
-                            </span>
-                        </div>
-                    </div>
+                <div class="space-y-6">
+                    <section
+                        class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sticky top-24"
+                    >
+                        <h3
+                            class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-6"
+                        >
+                            Ringkasan Biaya
+                        </h3>
 
-                    <!-- Actions -->
-                    <div class="flex gap-3 pt-4">
-                        <Link
-                            href="/pos/box"
-                            class="flex-1 text-center border border-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-50"
-                        >
-                            Batal
-                        </Link>
-                        <button
-                            type="submit"
-                            :disabled="form.processing || form.items.length === 0"
-                            class="flex-1 bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
-                        >
-                            {{ form.processing ? 'Menyimpan...' : 'Buat Order' }}
-                        </button>
-                    </div>
-                </form>
-            </div>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-500 font-medium"
+                                    >Jumlah Pesanan</span
+                                >
+                                <div class="flex items-center gap-3">
+                                    <button
+                                        type="button"
+                                        @click="
+                                            form.quantity = Math.max(
+                                                1,
+                                                form.quantity - 1
+                                            )
+                                        "
+                                        class="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50"
+                                    >
+                                        -
+                                    </button>
+                                    <span
+                                        class="text-sm font-bold w-6 text-center"
+                                        >{{ form.quantity }}</span
+                                    >
+                                    <button
+                                        type="button"
+                                        @click="form.quantity++"
+                                        class="w-8 h-8 rounded-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50"
+                                    >
+                                        +
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div
+                                class="pt-4 border-t border-dashed border-gray-200 space-y-2"
+                            >
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-500"
+                                        >Subtotal per Box</span
+                                    >
+                                    <span class="font-semibold text-gray-700">{{
+                                        formatMoney(itemsSubtotal)
+                                    }}</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-500"
+                                        >Total Unit</span
+                                    >
+                                    <span class="font-semibold text-gray-700"
+                                        >x{{ form.quantity }}</span
+                                    >
+                                </div>
+                            </div>
+
+                            <div
+                                class="pt-4 border-t border-gray-100 flex justify-between items-end"
+                            >
+                                <span
+                                    class="text-xs font-bold text-gray-400 uppercase"
+                                    >Total Akhir</span
+                                >
+                                <span
+                                    class="text-2xl font-black text-blue-600"
+                                    >{{ formatMoney(calculatedTotal) }}</span
+                                >
+                            </div>
+
+                            <button
+                                type="submit"
+                                :disabled="form.processing"
+                                class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all disabled:opacity-50 mt-4"
+                            >
+                                {{
+                                    form.processing
+                                        ? "Memproses..."
+                                        : "Simpan Pesanan"
+                                }}
+                            </button>
+
+                            <Link
+                                href="/pos/box"
+                                class="block w-full text-center text-sm font-bold text-gray-400 hover:text-gray-600 py-2"
+                            >
+                                Batalkan
+                            </Link>
+                        </div>
+                    </section>
+                </div>
+            </form>
         </div>
     </EmployeeLayout>
 </template>
+
+<style scoped>
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+</style>

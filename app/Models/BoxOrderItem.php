@@ -5,16 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-/**
- * @property int $id
- * @property int $box_order_id
- * @property string $product_name
- * @property int $quantity
- * @property string $unit_price
- * @property string $subtotal
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- */
 class BoxOrderItem extends Model
 {
     protected $fillable = [
@@ -26,23 +16,22 @@ class BoxOrderItem extends Model
     ];
 
     protected $casts = [
+        'quantity'   => 'integer',
         'unit_price' => 'decimal:2',
-        'subtotal' => 'decimal:2',
+        'subtotal'   => 'decimal:2',
     ];
 
-    /**
-     * Get the box order that owns this item.
-     */
+    protected static function booted()
+    {
+        // Menggunakan 'saving' lebih aman daripada 'creating' 
+        // agar subtotal terupdate juga saat ada perubahan data nantinya
+        static::saving(function ($item) {
+            $item->subtotal = $item->quantity * $item->unit_price;
+        });
+    }
+
     public function boxOrder(): BelongsTo
     {
         return $this->belongsTo(BoxOrder::class);
-    }
-
-    /**
-     * Calculate and set subtotal before saving.
-     */
-    public function calculateSubtotal(): void
-    {
-        $this->subtotal = $this->quantity * $this->unit_price;
     }
 }

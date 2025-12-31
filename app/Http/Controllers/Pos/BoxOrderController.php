@@ -14,6 +14,9 @@ use Inertia\Response;
 
 class BoxOrderController extends Controller
 {
+    /**
+     * Dependency Injection melalui Constructor.
+     */
     public function __construct(
         protected BoxOrderService $boxOrderService,
         protected AdminDataService $adminDataService
@@ -21,11 +24,12 @@ class BoxOrderController extends Controller
     }
 
     /**
-     * Display box order listing with countdown timers.
+     * Menampilkan daftar pesanan box (Dashboard).
      */
     public function index(): Response
     {
-        $upcomingOrders = $this->boxOrderService->getUpcomingOrdersWithCountdown();
+        // Mengambil data dari Service
+        $upcomingOrders = $this->boxOrderService->getUpcomingOrders();
         $todayOrders = $this->boxOrderService->getTodayOrders();
 
         return Inertia::render('Pos/Box/Index', [
@@ -35,11 +39,10 @@ class BoxOrderController extends Controller
     }
 
     /**
-     * Show form to create a new order (flexible line items).
+     * Menampilkan form buat order baru.
      */
-    public function create(BoxTemplate $template = null): Response
+    public function create(?BoxTemplate $template = null): Response
     {
-        // Get all active box templates for dropdown
         $boxTemplates = $this->adminDataService->getBoxTemplates();
 
         return Inertia::render('Pos/Box/Create', [
@@ -49,18 +52,19 @@ class BoxOrderController extends Controller
     }
 
     /**
-     * Store a new box order with flexible line items.
+     * Menyimpan order box baru.
      */
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'customer_name' => 'required|string|max:255',
-            'pickup_datetime' => 'required|date|after:now',
-            'quantity' => 'required|integer|min:1',
-            'items' => 'required|array|min:1',
+            'customer_name'     => 'required|string|max:255',
+            'box_template_id'   => 'nullable|exists:box_templates,id',
+            'pickup_datetime'   => 'required|date|after:now',
+            'quantity'          => 'required|integer|min:1',
+            'items'             => 'required|array|min:1',
             'items.*.product_name' => 'required|string|max:255',
-            'items.*.quantity' => 'required|integer|min:1',
-            'items.*.unit_price' => 'required|numeric|min:0',
+            'items.*.quantity'     => 'required|integer|min:1',
+            'items.*.unit_price'   => 'required|numeric|min:0',
         ]);
 
         try {
@@ -72,93 +76,72 @@ class BoxOrderController extends Controller
         } catch (\Exception $e) {
             return redirect()
                 ->back()
-                ->withErrors(['error' => $e->getMessage()]);
+                ->withInput()
+                ->withErrors(['error' => 'Gagal membuat order: ' . $e->getMessage()]);
         }
     }
 
     /**
-     * Upload payment proof for an order.
+     * Update status order (Digunakan oleh modal di Index.vue).
+     */
+    public function updateStatus(Request $request, int $orderId): RedirectResponse
+    {
+        $order = BoxOrder::findOrFail($orderId);
+        $targetStatus = $request->input('status');
+
+        $rules = [
+            'status' => 'required|in:pending,paid,completed,cancelled',
+        ];
+
+        // Validasi tambahan jika status dibatalkan
+        if ($targetStatus === 'cancelled') {
+            $rules['cancellation_reason'] = 'required|string|min:5|max:1000';
+        }
+
+        $validated = $request->validate($rules);
+
+        try {
+            if ($targetStatus === 'cancelled') {
+                $this->boxOrderService->cancelOrderWithReason($order, $validated['cancellation_reason']);
+            } else {
+                $this->boxOrderService->updateOrderStatus($order, $validated['status']);
+            }
+
+            return redirect()->back()->with('success', 'Status berhasil diubah menjadi ' . $targetStatus);
+                
+        } catch (\Exception $e) {
+            return redirect()
+                ->back()
+                ->withErrors(['error' => 'Gagal update status: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Download struk/receipt PDF.
+     */
+    public function downloadReceipt(int $id)
+    {
+        // Cari data manual untuk menghindari error Route Model Binding
+        $order = BoxOrder::findOrFail($id);
+        return $this->boxOrderService->generateReceipt($order);
+    }
+
+    /**
+     * Method upload bukti bayar (Jika diperlukan fitur upload manual).
      */
     public function uploadProof(Request $request, int $orderId): RedirectResponse
     {
-        $validated = $request->validate([
-            'payment_proof' => 'required|image|max:5120', // 5MB max
+        $request->validate([
+            'payment_proof' => 'required|image|mimes:jpeg,png,jpg|max:5120',
         ]);
 
         $order = BoxOrder::findOrFail($orderId);
 
         try {
             $this->boxOrderService->uploadPaymentProof($order, $request->file('payment_proof'));
-
-            return redirect()
-                ->back()
-                ->with('success', 'Bukti pembayaran berhasil diupload.');
+            return redirect()->back()->with('success', 'Bukti pembayaran berhasil disimpan.');
         } catch (\Exception $e) {
-            return redirect()
-                ->back()
-                ->withErrors(['error' => $e->getMessage()]);
+            return redirect()->back()->withErrors(['error' => 'Gagal upload: ' . $e->getMessage()]);
         }
-    }
-
-    /**
-     * Update order status with conditional validation.
-     * - For paid/completed: requires payment_proof upload
-     * - For cancelled: requires cancellation_reason
-     */
-    public function updateStatus(Request $request, int $orderId): RedirectResponse
-    {
-        $rules = [
-            'status' => 'required|in:pending,paid,completed,cancelled',
-        ];
-
-        // Conditional validation based on target status
-        $targetStatus = $request->input('status');
-
-        if (in_array($targetStatus, ['paid', 'completed'])) {
-            // If order doesn't have payment proof yet, require it
-            $order = BoxOrder::findOrFail($orderId);
-            if (!$order->payment_proof_path) {
-                $rules['payment_proof'] = 'required|image|max:5120';
-            }
-        }
-
-        if ($targetStatus === 'cancelled') {
-            $rules['cancellation_reason'] = 'required|string|max:1000';
-        }
-
-        $validated = $request->validate($rules);
-
-        $order = BoxOrder::findOrFail($orderId);
-
-        try {
-            // Handle payment proof upload if provided
-            if ($request->hasFile('payment_proof')) {
-                $this->boxOrderService->uploadPaymentProof($order, $request->file('payment_proof'));
-                $order->refresh();
-            }
-
-            // Handle cancellation reason
-            if ($targetStatus === 'cancelled' && !empty($validated['cancellation_reason'])) {
-                $this->boxOrderService->cancelOrderWithReason($order, $validated['cancellation_reason']);
-            } else {
-                $this->boxOrderService->updateOrderStatus($order, $validated['status']);
-            }
-
-            return redirect()
-                ->back()
-                ->with('success', 'Status order berhasil diperbarui.');
-        } catch (\Exception $e) {
-            return redirect()
-                ->back()
-                ->withErrors(['error' => $e->getMessage()]);
-        }
-    }
-
-    /**
-     * Download receipt PDF for an order.
-     */
-    public function downloadReceipt(BoxOrder $order)
-    {
-        return $this->boxOrderService->generateReceipt($order);
     }
 }
