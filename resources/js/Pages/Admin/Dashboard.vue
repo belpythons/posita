@@ -61,6 +61,7 @@ const props = defineProps({
 });
 
 const chartTab = ref('daily');
+const hoveredPoint = ref(null);
 
 // Get data based on selected tab
 const chartData = computed(() => {
@@ -115,6 +116,15 @@ const areaPath = computed(() => {
     
     return path;
 });
+
+// Format date label for chart
+const formatDateLabel = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const day = date.getDate();
+    const month = date.getMonth() + 1;
+    return `${day}/${month}`;
+};
 
 const getStatusBadge = (status) => {
     const badges = {
@@ -271,7 +281,7 @@ const closeOrderModal = () => {
             </div>
             <div class="p-6">
                 <!-- SVG Line Chart -->
-                <svg :viewBox="`0 0 ${chartWidth} ${chartHeight}`" class="w-full h-64">
+                <svg :viewBox="`0 0 ${chartWidth} ${chartHeight + 20}`" class="w-full h-72">
                     <!-- Grid lines -->
                     <line 
                         v-for="i in 4" 
@@ -303,6 +313,17 @@ const closeOrderModal = () => {
                     
                     <!-- Data points -->
                     <g v-for="(d, i) in chartData" :key="i">
+                        <!-- Invisible larger circle for easier hover -->
+                        <circle
+                            :cx="padding + (i * (chartWidth - padding * 2)) / (chartData.length - 1 || 1)"
+                            :cy="chartHeight - padding - ((d.revenue / chartMax) * (chartHeight - padding * 2))"
+                            r="15"
+                            fill="transparent"
+                            class="cursor-pointer"
+                            @mouseenter="hoveredPoint = { ...d, index: i }"
+                            @mouseleave="hoveredPoint = null"
+                        />
+                        <!-- Visible data point -->
                         <circle
                             :cx="padding + (i * (chartWidth - padding * 2)) / (chartData.length - 1 || 1)"
                             :cy="chartHeight - padding - ((d.revenue / chartMax) * (chartHeight - padding * 2))"
@@ -310,15 +331,37 @@ const closeOrderModal = () => {
                             fill="#3b82f6"
                             stroke="white"
                             stroke-width="2"
+                            class="pointer-events-none"
                         />
                         <!-- Label -->
                         <text
                             :x="padding + (i * (chartWidth - padding * 2)) / (chartData.length - 1 || 1)"
                             :y="chartHeight - 10"
                             text-anchor="middle"
-                            class="text-xs fill-gray-600"
+                            class="text-xs fill-gray-600 pointer-events-none"
+                            font-weight="500"
                         >
-                            {{ d.date || d.month }}
+                            {{ d.label }}
+                        </text>
+                        <!-- Date below label (for daily view) -->
+                        <text
+                            v-if="chartTab === 'daily' && d.full_date"
+                            :x="padding + (i * (chartWidth - padding * 2)) / (chartData.length - 1 || 1)"
+                            :y="chartHeight + 5"
+                            text-anchor="middle"
+                            class="text-[10px] fill-gray-400 pointer-events-none"
+                        >
+                            {{ formatDateLabel(d.full_date) }}
+                        </text>
+                        <!-- Date range for weekly/monthly view -->
+                        <text
+                            v-if="chartTab !== 'daily' && d.full_date"
+                            :x="padding + (i * (chartWidth - padding * 2)) / (chartData.length - 1 || 1)"
+                            :y="chartHeight + 5"
+                            text-anchor="middle"
+                            class="text-[10px] fill-gray-400 pointer-events-none"
+                        >
+                            {{ formatDateLabel(d.full_date) }}
                         </text>
                     </g>
                     
@@ -330,6 +373,41 @@ const closeOrderModal = () => {
                         </linearGradient>
                     </defs>
                 </svg>
+                
+                <!-- Tooltip -->
+                <div
+                    v-if="hoveredPoint"
+                    class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg transition-all"
+                >
+                    <div class="text-sm font-semibold text-gray-700 mb-2">
+                        {{ hoveredPoint.label }}
+                        <span v-if="hoveredPoint.full_date && chartTab === 'daily'" class="text-gray-500 font-normal">
+                            ({{ hoveredPoint.full_date }})
+                        </span>
+                        <span v-if="hoveredPoint.date_range" class="text-gray-500 font-normal block text-xs">
+                            {{ hoveredPoint.date_range }}
+                        </span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-3 text-sm">
+                        <div>
+                            <div class="text-gray-500 text-xs">Total</div>
+                            <div class="font-bold text-blue-600">{{ formatMoney(hoveredPoint.revenue) }}</div>
+                        </div>
+                        <div>
+                            <div class="text-gray-500 text-xs">Konsinyasi</div>
+                            <div class="font-semibold text-green-600">{{ formatMoney(hoveredPoint.session_revenue) }}</div>
+                        </div>
+                        <div>
+                            <div class="text-gray-500 text-xs">Box Order</div>
+                            <div class="font-semibold text-purple-600">{{ formatMoney(hoveredPoint.box_revenue) }}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Info text when no hover -->
+                <div v-else class="mt-4 text-center text-sm text-gray-400">
+                    Arahkan kursor ke titik data untuk melihat detail
+                </div>
             </div>
         </div>
 

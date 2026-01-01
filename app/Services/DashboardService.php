@@ -13,6 +13,22 @@ use Illuminate\Support\Facades\DB;
 class DashboardService
 {
     /**
+     * Get database-specific date format expression.
+     */
+    private function getDateFormat(string $column, string $format): string
+    {
+        $driver = DB::connection()->getDriverName();
+        
+        if ($driver === 'sqlite') {
+            // SQLite uses strftime
+            return "strftime('{$format}', {$column})";
+        }
+        
+        // MySQL uses DATE_FORMAT
+        return "DATE_FORMAT({$column}, '{$format}')";
+    }
+
+    /**
      * Centralized sales trend method with dynamic date filtering.
      * 
      * @param string $range 'daily' | 'weekly' | 'monthly'
@@ -121,19 +137,21 @@ class DashboardService
         $endDate = Carbon::now()->endOfMonth();
 
         // Get session revenue grouped by month using database aggregation
+        $dateFormatExpr = $this->getDateFormat('shop_sessions.opened_at', '%Y-%m');
         $sessionRevenue = DailyConsignment::query()
             ->join('shop_sessions', 'daily_consignments.shop_session_id', '=', 'shop_sessions.id')
             ->whereBetween('shop_sessions.opened_at', [$startDate, $endDate])
             ->where('shop_sessions.status', 'closed')
-            ->selectRaw("DATE_FORMAT(shop_sessions.opened_at, '%Y-%m') as month, SUM(daily_consignments.subtotal_income) as total")
+            ->selectRaw("{$dateFormatExpr} as month, SUM(daily_consignments.subtotal_income) as total")
             ->groupBy('month')
             ->pluck('total', 'month')
             ->toArray();
 
         // Get box order revenue grouped by month
+        $boxDateFormatExpr = $this->getDateFormat('created_at', '%Y-%m');
         $boxRevenue = BoxOrder::whereBetween('created_at', [$startDate, $endDate])
             ->whereIn('status', ['paid', 'completed'])
-            ->selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month, SUM(total_price) as total")
+            ->selectRaw("{$boxDateFormatExpr} as month, SUM(total_price) as total")
             ->groupBy('month')
             ->pluck('total', 'month')
             ->toArray();
@@ -169,12 +187,13 @@ class DashboardService
     private function getSessionRevenueAggregated(Carbon $startDate, Carbon $endDate, string $groupBy = 'date'): array
     {
         $format = $groupBy === 'date' ? '%Y-%m-%d' : '%Y-%m';
+        $dateFormatExpr = $this->getDateFormat('shop_sessions.opened_at', $format);
 
         return DailyConsignment::query()
             ->join('shop_sessions', 'daily_consignments.shop_session_id', '=', 'shop_sessions.id')
             ->whereBetween('shop_sessions.opened_at', [$startDate, $endDate])
             ->where('shop_sessions.status', 'closed')
-            ->selectRaw("DATE_FORMAT(shop_sessions.opened_at, '{$format}') as period, SUM(daily_consignments.subtotal_income) as total")
+            ->selectRaw("{$dateFormatExpr} as period, SUM(daily_consignments.subtotal_income) as total")
             ->groupBy('period')
             ->pluck('total', 'period')
             ->toArray();
@@ -187,10 +206,11 @@ class DashboardService
     private function getBoxOrderRevenueAggregated(Carbon $startDate, Carbon $endDate, string $groupBy = 'date'): array
     {
         $format = $groupBy === 'date' ? '%Y-%m-%d' : '%Y-%m';
+        $dateFormatExpr = $this->getDateFormat('created_at', $format);
 
         return BoxOrder::whereBetween('created_at', [$startDate, $endDate])
             ->whereIn('status', ['paid', 'completed'])
-            ->selectRaw("DATE_FORMAT(created_at, '{$format}') as period, SUM(total_price) as total")
+            ->selectRaw("{$dateFormatExpr} as period, SUM(total_price) as total")
             ->groupBy('period')
             ->pluck('total', 'period')
             ->toArray();
