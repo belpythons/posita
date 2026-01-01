@@ -1,6 +1,5 @@
-<!-- Rivaldi | 202312050 -->
 <?php
-
+// Rivaldi | 202312050
 namespace App\Http\Controllers\Pos;
 
 use App\Http\Controllers\Controller;
