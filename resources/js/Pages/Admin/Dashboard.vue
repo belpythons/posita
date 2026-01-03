@@ -189,9 +189,9 @@ const closeOrderModal = () => {
             <h2 class="text-xl font-semibold text-gray-800">Dashboard</h2>
         </template>
 
-        <!-- Quick Stats -->
+        <!-- Quick Stats with Hover Effects -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div class="bg-white rounded-lg shadow p-6">
+            <div class="bg-white rounded-lg shadow p-6 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg cursor-default">
                 <h3 class="text-sm font-medium text-gray-500">Penjualan Hari Ini</h3>
                 <p class="text-2xl font-bold text-green-600 mt-2">
                     {{ formatMoney(dailySalesTotal) }}
@@ -213,7 +213,7 @@ const closeOrderModal = () => {
                 </div>
             </div>
 
-            <div class="bg-white rounded-lg shadow p-6">
+            <div class="bg-white rounded-lg shadow p-6 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg cursor-default">
                 <h3 class="text-sm font-medium text-gray-500">Profit Hari Ini</h3>
                 <p class="text-2xl font-bold text-blue-600 mt-2">
                     {{ formatMoney(globalProfit.today_profit || 0) }}
@@ -224,14 +224,14 @@ const closeOrderModal = () => {
                 </p>
             </div>
 
-            <div class="bg-white rounded-lg shadow p-6">
+            <div class="bg-white rounded-lg shadow p-6 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg cursor-default">
                 <h3 class="text-sm font-medium text-gray-500">Order Box Pending</h3>
                 <p class="text-2xl font-bold text-orange-600 mt-2">
                     {{ boxOrderStats.pending_orders || 0 }}
                 </p>
             </div>
 
-            <div class="bg-white rounded-lg shadow p-6">
+            <div class="bg-white rounded-lg shadow p-6 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg cursor-default">
                 <h3 class="text-sm font-medium text-gray-500">Total Partners</h3>
                 <p class="text-2xl font-bold text-purple-600 mt-2">
                     {{ quickStats.total_partners || 0 }}

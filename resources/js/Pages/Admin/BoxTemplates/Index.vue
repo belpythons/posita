@@ -2,6 +2,7 @@
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import { UtensilsCrossed, Cookie, Plus, Pencil, Trash2, Package } from 'lucide-vue-next';
 
 const props = defineProps({
     templates: {
@@ -96,28 +97,32 @@ const formatCurrency = (value) => {
 
     <AdminLayout>
         <template #header>
-            <h2 class="text-xl font-semibold text-gray-800">Box Templates</h2>
+            <h2 class="text-xl font-semibold text-foreground">Box Templates</h2>
         </template>
 
         <!-- Header Actions -->
         <div class="flex justify-between items-center mb-6">
-            <p class="text-gray-600">Total: {{ templates.length }} template</p>
+            <p class="text-muted-foreground">Total: {{ templates.length }} template</p>
             <button
                 @click="openCreateModal"
-                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                class="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 flex items-center gap-2"
             >
-                + Tambah Template
+                <Plus class="w-4 h-4" />
+                Tambah Template
             </button>
         </div>
 
         <!-- Heavy Meal Templates -->
         <div class="mb-8">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">🍱 Makan Berat</h3>
+            <h3 class="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                <UtensilsCrossed class="w-5 h-5 text-primary" />
+                Makan Berat
+            </h3>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div
                     v-for="template in heavyMealTemplates"
                     :key="template.id"
-                    class="bg-white rounded-lg shadow p-4"
+                    class="bg-card rounded-lg shadow p-4 border border-border"
                 >
                     <div class="flex justify-between items-start mb-3">
                         <h4 class="font-medium">{{ template.name }}</h4>
@@ -132,10 +137,10 @@ const formatCurrency = (value) => {
                             {{ template.is_active ? 'Aktif' : 'Nonaktif' }}
                         </span>
                     </div>
-                    <p class="text-lg font-bold text-green-600 mb-2">
+                    <p class="text-lg font-bold text-accent mb-2">
                         {{ formatCurrency(template.price) }}
                     </p>
-                    <div class="text-sm text-gray-600 mb-3">
+                    <div class="text-sm text-muted-foreground mb-3">
                         <p class="font-medium mb-1">Isi:</p>
                         <ul class="list-disc list-inside">
                             <li v-for="(item, idx) in template.items_json" :key="idx">{{ item }}</li>
@@ -144,32 +149,37 @@ const formatCurrency = (value) => {
                     <div class="flex gap-2">
                         <button
                             @click="openEditModal(template)"
-                            class="text-sm text-blue-600 hover:text-blue-800"
+                            class="text-sm text-primary hover:text-primary/80 flex items-center gap-1"
                         >
+                            <Pencil class="w-3.5 h-3.5" />
                             Edit
                         </button>
                         <button
                             @click="deleteTemplate(template)"
-                            class="text-sm text-red-600 hover:text-red-800"
+                            class="text-sm text-destructive hover:text-destructive/80 flex items-center gap-1"
                         >
+                            <Trash2 class="w-3.5 h-3.5" />
                             Hapus
                         </button>
                     </div>
                 </div>
             </div>
-            <p v-if="heavyMealTemplates.length === 0" class="text-gray-500 text-center py-8">
+            <p v-if="heavyMealTemplates.length === 0" class="text-muted-foreground text-center py-8">
                 Belum ada template makan berat
             </p>
         </div>
 
         <!-- Snack Box Templates -->
         <div>
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">🍪 Snack Box</h3>
+            <h3 class="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                <Cookie class="w-5 h-5 text-primary" />
+                Snack Box
+            </h3>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div
                     v-for="template in snackBoxTemplates"
                     :key="template.id"
-                    class="bg-white rounded-lg shadow p-4"
+                    class="bg-card rounded-lg shadow p-4 border border-border"
                 >
                     <div class="flex justify-between items-start mb-3">
                         <h4 class="font-medium">{{ template.name }}</h4>
@@ -184,10 +194,10 @@ const formatCurrency = (value) => {
                             {{ template.is_active ? 'Aktif' : 'Nonaktif' }}
                         </span>
                     </div>
-                    <p class="text-lg font-bold text-green-600 mb-2">
+                    <p class="text-lg font-bold text-accent mb-2">
                         {{ formatCurrency(template.price) }}
                     </p>
-                    <div class="text-sm text-gray-600 mb-3">
+                    <div class="text-sm text-muted-foreground mb-3">
                         <p class="font-medium mb-1">Isi:</p>
                         <ul class="list-disc list-inside">
                             <li v-for="(item, idx) in template.items_json" :key="idx">{{ item }}</li>
@@ -196,20 +206,22 @@ const formatCurrency = (value) => {
                     <div class="flex gap-2">
                         <button
                             @click="openEditModal(template)"
-                            class="text-sm text-blue-600 hover:text-blue-800"
+                            class="text-sm text-primary hover:text-primary/80 flex items-center gap-1"
                         >
+                            <Pencil class="w-3.5 h-3.5" />
                             Edit
                         </button>
                         <button
                             @click="deleteTemplate(template)"
-                            class="text-sm text-red-600 hover:text-red-800"
+                            class="text-sm text-destructive hover:text-destructive/80 flex items-center gap-1"
                         >
+                            <Trash2 class="w-3.5 h-3.5" />
                             Hapus
                         </button>
                     </div>
                 </div>
             </div>
-            <p v-if="snackBoxTemplates.length === 0" class="text-gray-500 text-center py-8">
+            <p v-if="snackBoxTemplates.length === 0" class="text-muted-foreground text-center py-8">
                 Belum ada template snack box
             </p>
         </div>
