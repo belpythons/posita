@@ -14,20 +14,27 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         // Admin User
-        User::create([
-            'name' => 'Admin Posita',
-            'email' => 'admin@posita.com',
-            'password' => Hash::make('password'),
-            'role' => 'admin',
-            'is_active' => true,
-        ]);
+        $admins = [
+            ['name' => 'admin posita', 'email' => 'admin@posita.com'],
+            ['name' => 'bebe', 'email' => 'bebleblablibub@gmail.com'],
+        ];
+        foreach ($admins as $admin) {
+            User::create([
+                'name' => $admin['name'],
+                'email' => $admin['email'],
+                'password' => Hash::make('password'),
+                'role' => 'admin',
+                'is_active' => true,
+            ]);
+        }
 
         // Employee/Kasir Users
         $employees = [
+            ['name' => 'Staff User', 'email' => 'staff@posita.com'],
             ['name' => 'Rivaldi', 'email' => 'rivaldi@posita.com'],
             ['name' => 'Amar', 'email' => 'amar@posita.com'],
             ['name' => 'Nurita', 'email' => 'nurita@posita.com'],
-            ['name' => 'Belva', 'email' => 'belva@posita.com'],
+            ['name' => 'Belva', 'email' => 'belvapranamasriwibowo@gmail.com'],
         ];
 
         foreach ($employees as $employee) {

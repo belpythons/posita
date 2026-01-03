@@ -57,46 +57,79 @@ class BoxOrderSeeder extends Seeder
         // =====================================
         // Completed orders (past 30 days) - 80 orders
         // =====================================
-        for ($i = 0; $i < 80; $i++) {
-            $pickupDate = Carbon::now()->subDays(rand(1, 30));
-            $status = rand(0, 10) < 9 ? 'completed' : 'cancelled';
+        // =====================================
+        // Historical Orders (Past 3 months)
+        // =====================================
+        $startDate = Carbon::now()->subMonths(3)->startOfDay();
+        $endDate = Carbon::now()->subDay()->endOfDay(); // Until yesterday
 
-            $order = BoxOrder::create([
-                'customer_name' => $customerNames[array_rand($customerNames)],
-                'box_template_id' => null,
-                'quantity' => 1,
-                'total_price' => 0,
-                'pickup_datetime' => $pickupDate,
-                'status' => $status,
-                'cancellation_reason' => $status === 'cancelled' ? 'Customer request' : null,
+        $currentDate = $startDate->copy();
+
+        while ($currentDate->lte($endDate)) {
+            $isWeekend = $currentDate->isWeekend();
+            // Weekends: 8-15 orders, Weekdays: 3-8 orders
+            $ordersCount = $isWeekend ? rand(8, 15) : rand(3, 8);
+
+            for ($i = 0; $i < $ordersCount; $i++) {
+                // Time distribution: 40% Lunch (11-13), 40% Afternoon (16-18), 20% Random
+                $timeRand = rand(1, 100);
+                if ($timeRand <= 40) {
+                    $hour = rand(11, 13);
+                } elseif ($timeRand <= 80) {
+                    $hour = rand(16, 18);
+                } else {
+                    $hour = rand(8, 20);
+                }
+
+                $orderDateTime = $currentDate->copy()->setHour($hour)->setMinute(rand(0, 59));
+
+                // Status distribution
+                $status = rand(1, 100) <= 95 ? 'completed' : 'cancelled';
+
+                $order = BoxOrder::create([
+                    'customer_name' => $customerNames[array_rand($customerNames)],
+                    'box_template_id' => null,
+                    'quantity' => 1,
+                    'total_price' => 0,
+                    'pickup_datetime' => $orderDateTime,
+                    'created_at' => $orderDateTime, // Important for daily_stats
+                    'updated_at' => $orderDateTime,
+                    'status' => $status,
+                    'cancellation_reason' => $status === 'cancelled' ? 'Customer request' : null,
+                ]);
+
+                // Add Items
+                $total = 0;
+                $itemCount = rand(2, 6);
+                $selectedItems = array_rand($menuItems, $itemCount);
+                if (!is_array($selectedItems))
+                    $selectedItems = [$selectedItems];
+
+                foreach ($selectedItems as $itemIndex) {
+                    $item = $menuItems[$itemIndex];
+                    $qty = rand(15, 50);
+                    $price = rand($item['price_range'][0], $item['price_range'][1]);
+                    $subtotal = $qty * $price;
+                    $total += $subtotal;
+
+                    BoxOrderItem::create([
+                        'box_order_id' => $order->id,
+                        'product_name' => $item['name'],
+                        'quantity' => $qty,
+                        'unit_price' => $price,
+                        'subtotal' => $subtotal,
+                    ]);
+                }
+
+                $order->update(['total_price' => $total]);
+            }
+
+            // Aggregate stats for this day immediately
+            \Illuminate\Support\Facades\Artisan::call('stats:aggregate-daily', [
+                'date' => $currentDate->toDateString()
             ]);
 
-            // Add 2-5 items per order
-            $total = 0;
-            $itemCount = rand(2, 5);
-            $selectedItems = array_rand($menuItems, $itemCount);
-
-            if (!is_array($selectedItems)) {
-                $selectedItems = [$selectedItems];
-            }
-
-            foreach ($selectedItems as $itemIndex) {
-                $item = $menuItems[$itemIndex];
-                $qty = rand(15, 60);
-                $price = rand($item['price_range'][0], $item['price_range'][1]);
-                $subtotal = $qty * $price;
-                $total += $subtotal;
-
-                BoxOrderItem::create([
-                    'box_order_id' => $order->id,
-                    'product_name' => $item['name'],
-                    'quantity' => $qty,
-                    'unit_price' => $price,
-                    'subtotal' => $subtotal,
-                ]);
-            }
-
-            $order->update(['total_price' => $total]);
+            $currentDate->addDay();
         }
 
         // =====================================
