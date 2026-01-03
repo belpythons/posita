@@ -1,22 +1,24 @@
 <script setup>
-import ApplicationLogo from '@/Components/ApplicationLogo.vue';
-import { Link } from '@inertiajs/vue3';
+import { onMounted, onUnmounted } from 'vue'
+
+/**
+ * GuestLayout - Used for authentication pages (login, register, etc.)
+ * Features animated background with theme-neutral (Orange) styling
+ */
+
+// Force theme-neutral on this layout
+onMounted(() => {
+  document.documentElement.classList.remove('dark')
+  document.documentElement.classList.add('theme-neutral')
+})
+
+onUnmounted(() => {
+  document.documentElement.classList.remove('theme-neutral')
+})
 </script>
 
 <template>
-    <div
-        class="flex min-h-screen flex-col items-center bg-gray-100 pt-6 sm:justify-center sm:pt-0"
-    >
-        <div>
-            <Link href="/">
-                <ApplicationLogo class="h-20 w-20 fill-current text-gray-500" />
-            </Link>
-        </div>
-
-        <div
-            class="mt-6 w-full overflow-hidden bg-white px-6 py-4 shadow-md sm:max-w-md sm:rounded-lg"
-        >
-            <slot />
-        </div>
-    </div>
+  <div class="theme-neutral min-h-screen bg-background">
+    <slot />
+  </div>
 </template>
