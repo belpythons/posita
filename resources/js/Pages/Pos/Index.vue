@@ -61,7 +61,7 @@ const sessionInfo = computed(() => ({
                 title="Item Terjual"
                 :value="stats?.itemsSold || 0"
                 suffix=" pcs"
-                variant="primary"
+                variant="positive"
             >
                 <template #icon>
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

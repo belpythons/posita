@@ -2,9 +2,9 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { Link, usePage } from '@inertiajs/vue3'
 import { toast } from 'vue-sonner'
-import { useTheme } from '@/composables/useTheme'
 import { Sheet, DropdownMenu, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel, Sonner } from '@/Components/ui'
 import CommandMenu from '@/Components/CommandMenu.vue'
+import { useTheme } from '@/composables/useTheme'
 import {
   LayoutDashboard,
   Users,
@@ -15,15 +15,16 @@ import {
   LogOut,
   Settings,
   ChevronDown,
-  Sun,
-  Moon,
   PanelLeftClose,
-  PanelLeft
+  PanelLeft,
+  Sun,
+  Moon
 } from 'lucide-vue-next'
+
+const { toggleTheme, isDark } = useTheme()
 
 const page = usePage()
 const user = computed(() => page.props.auth?.user)
-const { theme, toggleTheme } = useTheme()
 
 // Navigation items with Lucide icons
 const navigation = [
@@ -54,9 +55,7 @@ const checkMobile = () => {
 onMounted(() => {
   checkMobile()
   window.addEventListener('resize', checkMobile)
-  // Force dark mode for Admin
-  document.documentElement.classList.remove('theme-neutral')
-  document.documentElement.classList.add('dark')
+  // Theme is now initialized once in app.js - no need to force here
 })
 
 onUnmounted(() => {
@@ -105,7 +104,7 @@ const closeMobileSidebar = () => {
 </script>
 
 <template>
-  <div class="dark min-h-screen bg-background">
+  <div class="min-h-screen bg-background">
     <!-- Toast Container -->
     <Sonner />
 
@@ -165,7 +164,7 @@ const closeMobileSidebar = () => {
           <h1 v-if="isSidebarOpen" class="text-xl font-bold text-sidebar-foreground tracking-tight">
             <span class="text-primary">Posita</span> Admin
           </h1>
-          <span v-else class="text-xl font-bold text-primary">P</span>
+          <span v-else class="text-xl font-bold text-primary">Ita</span>
         </Transition>
       </div>
 
@@ -289,11 +288,9 @@ const closeMobileSidebar = () => {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
 
-            <!-- Theme Toggle -->
             <DropdownMenuItem @click="toggleTheme">
-              <Sun v-if="theme === 'employee'" class="w-4 h-4 mr-2" />
-              <Moon v-else class="w-4 h-4 mr-2" />
-              {{ theme === 'admin' ? 'Employee Theme' : 'Admin Theme' }}
+              <component :is="isDark ? Sun : Moon" class="w-4 h-4 mr-2" />
+              <span>Switch to {{ isDark ? 'Light' : 'Dark' }} Theme</span>
             </DropdownMenuItem>
 
             <DropdownMenuItem as-child>

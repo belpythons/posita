@@ -29,7 +29,23 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    hasActiveSession: {
+        type: Boolean,
+        default: false,
+    },
+    activeSession: {
+        type: Object,
+        default: null,
+    },
 });
+
+// Session info for sidebar status
+const sessionInfo = computed(() => ({
+  shiftName: props.activeSession?.shift_name ?? null,
+  openingBalance: props.activeSession?.opening_cash ?? 0,
+  isActive: props.hasActiveSession,
+  openedAt: props.activeSession?.opened_at ?? null,
+}));
 
 // Selected template ID for dropdown
 const selectedTemplateId = ref('');
@@ -123,7 +139,7 @@ if (form.items.length === 0) {
 <template>
     <Head title="Buat Order Box" />
 
-    <EmployeeLayout>
+    <EmployeeLayout :session-info="sessionInfo">
         <template #header>
             <div class="flex items-center gap-2">
                 <Package class="w-6 h-6 text-gray-600" />
@@ -139,7 +155,7 @@ if (form.items.length === 0) {
                         <!-- Template Selection Card -->
                         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
                             <div class="flex items-center gap-2 mb-4">
-                                <Box class="w-5 h-5 text-indigo-600" />
+                                <Box class="w-5 h-5 text-emerald-600" />
                                 <label class="font-medium text-gray-800">Template Box</label>
                                 <span class="text-xs text-gray-400">(Opsional)</span>
                             </div>
@@ -269,7 +285,7 @@ if (form.items.length === 0) {
                         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
                             <div class="flex justify-between items-center mb-4">
                                 <div class="flex items-center gap-2">
-                                    <ShoppingBag class="w-5 h-5 text-amber-600" />
+                                    <ShoppingBag class="w-5 h-5 text-emerald-600" />
                                     <label class="font-medium text-gray-800">
                                         Item per Box
                                     </label>
@@ -345,8 +361,8 @@ if (form.items.length === 0) {
                             </div>
                         </div>
 
-                        <!-- Mobile Summary (visible on small screens) -->
-                        <div class="lg:hidden bg-gradient-to-br from-indigo-50 to-muted rounded-2xl border border-indigo-100 p-5">
+                        <!-- Mobile Summary (visible on small screens) - Orange Gradient -->
+                        <div class="lg:hidden bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl border border-orange-200 p-5">
                             <div class="space-y-3">
                                 <div class="flex justify-between items-center text-sm">
                                     <span class="text-gray-600">Harga per Box</span>
@@ -356,9 +372,9 @@ if (form.items.length === 0) {
                                     <span class="text-gray-600">Jumlah Box</span>
                                     <span class="font-semibold">× {{ form.quantity }}</span>
                                 </div>
-                                <div class="border-t border-indigo-200 pt-3 flex justify-between items-center">
+                                <div class="border-t border-orange-200 pt-3 flex justify-between items-center">
                                     <span class="font-semibold text-gray-700">Total</span>
-                                    <span class="text-2xl font-bold text-indigo-600">
+                                    <span class="text-2xl font-bold text-orange-600">
                                         {{ formatMoney(calculatedTotal) }}
                                     </span>
                                 </div>
@@ -376,7 +392,7 @@ if (form.items.length === 0) {
                             <button
                                 type="submit"
                                 :disabled="form.processing || form.items.length === 0"
-                                class="flex-1 bg-indigo-600 text-white py-3.5 rounded-xl font-semibold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                                class="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3.5 rounded-xl font-semibold hover:from-orange-600 hover:to-orange-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-orange-500/25 transition-all duration-200"
                             >
                                 {{ form.processing ? 'Menyimpan...' : 'Buat Order' }}
                             </button>
@@ -387,8 +403,8 @@ if (form.items.length === 0) {
                     <div class="hidden lg:block lg:w-5/12">
                         <div class="sticky top-8">
                             <div class="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-                                <!-- Receipt Header -->
-                                <div class="bg-gradient-to-r from-indigo-600 to-primary p-5 text-white text-center">
+                                <!-- Receipt Header - Orange Gradient -->
+                                <div class="bg-gradient-to-r from-orange-500 to-amber-500 p-5 text-white text-center">
                                     <Package class="w-10 h-10 mx-auto mb-2 opacity-80" />
                                     <h3 class="font-semibold text-lg">Ringkasan Order</h3>
                                 </div>
@@ -430,7 +446,7 @@ if (form.items.length === 0) {
                                     <!-- Total -->
                                     <div class="flex justify-between items-center">
                                         <span class="font-bold text-gray-800 text-lg">TOTAL</span>
-                                        <span class="text-3xl font-bold text-indigo-600">
+                                        <span class="text-3xl font-bold text-orange-600">
                                             {{ formatMoney(calculatedTotal) }}
                                         </span>
                                     </div>
@@ -459,7 +475,7 @@ if (form.items.length === 0) {
                                     <button
                                         type="submit"
                                         :disabled="form.processing || form.items.length === 0"
-                                        class="w-full bg-gradient-to-r from-indigo-600 to-primary text-white py-3.5 rounded-xl font-semibold hover:from-indigo-700 hover:to-primary disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg shadow-indigo-500/30"
+                                        class="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3.5 rounded-xl font-semibold hover:from-orange-600 hover:to-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg shadow-orange-500/30"
                                     >
                                         {{ form.processing ? 'Menyimpan...' : 'Buat Order' }}
                                     </button>

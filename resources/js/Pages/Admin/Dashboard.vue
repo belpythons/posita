@@ -3,6 +3,27 @@ import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import { formatMoney } from '@/utils/formatMoney';
+import {
+    TrendingUp,
+    TrendingDown,
+    Minus,
+    Wallet,
+    Package,
+    Users,
+    BarChart3,
+    Clock,
+    ClipboardList,
+    Eye,
+    FileText,
+    X,
+    Image,
+    Calendar,
+    User,
+    DollarSign,
+    ShoppingBag,
+    ArrowUpRight,
+    ArrowDownRight
+} from 'lucide-vue-next';
 
 const props = defineProps({
     dailySalesTotal: {
@@ -189,67 +210,101 @@ const closeOrderModal = () => {
             <h2 class="text-xl font-semibold text-gray-800">Dashboard</h2>
         </template>
 
-        <!-- Quick Stats with Hover Effects -->
+        <!-- Quick Stats with Icons and Orange Theme -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div class="bg-white rounded-lg shadow p-6 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg cursor-default">
-                <h3 class="text-sm font-medium text-gray-500">Penjualan Hari Ini</h3>
-                <p class="text-2xl font-bold text-green-600 mt-2">
-                    {{ formatMoney(dailySalesTotal) }}
-                </p>
-                <div class="mt-2 flex items-center gap-1">
-                    <span 
+            <!-- Penjualan Hari Ini -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg cursor-default">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                        <DollarSign class="w-6 h-6 text-white" />
+                    </div>
+                    <div 
                         v-if="salesTrend.trend_direction !== 'flat'"
                         :class="[
-                            'text-sm font-medium flex items-center gap-1',
-                            salesTrend.trend_direction === 'up' ? 'text-green-600' : 'text-red-600'
+                            'flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium',
+                            salesTrend.trend_direction === 'up' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
                         ]"
                     >
-                        <span v-if="salesTrend.trend_direction === 'up'">↑</span>
-                        <span v-else>↓</span>
+                        <TrendingUp v-if="salesTrend.trend_direction === 'up'" class="w-3 h-3" />
+                        <TrendingDown v-else class="w-3 h-3" />
                         {{ Math.abs(salesTrend.trend_percent) }}%
-                    </span>
-                    <span v-else class="text-sm text-gray-400">— 0%</span>
-                    <span class="text-xs text-gray-400">vs kemarin</span>
+                    </div>
+                    <div v-else class="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
+                        <Minus class="w-3 h-3" />
+                        0%
+                    </div>
                 </div>
+                <h3 class="text-sm font-medium text-gray-500">Penjualan Hari Ini</h3>
+                <p class="text-2xl font-bold text-gray-800 mt-1">
+                    {{ formatMoney(dailySalesTotal) }}
+                </p>
+                <p class="text-xs text-gray-400 mt-1">vs kemarin</p>
             </div>
 
-            <div class="bg-white rounded-lg shadow p-6 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg cursor-default">
+            <!-- Profit Hari Ini -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg cursor-default">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-500/30">
+                        <Wallet class="w-6 h-6 text-white" />
+                    </div>
+                </div>
                 <h3 class="text-sm font-medium text-gray-500">Profit Hari Ini</h3>
-                <p class="text-2xl font-bold text-blue-600 mt-2">
+                <p class="text-2xl font-bold text-gray-800 mt-1">
                     {{ formatMoney(globalProfit.today_profit || 0) }}
                 </p>
                 <p class="text-xs text-gray-400 mt-1">
-                    Konsinyasi: {{ formatMoney(globalProfit.today_session_profit || 0) }} | 
-                    Box: {{ formatMoney(globalProfit.today_box_profit || 0) }}
+                    Konsinyasi: {{ formatMoney(globalProfit.today_session_profit || 0) }}
                 </p>
             </div>
 
-            <div class="bg-white rounded-lg shadow p-6 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg cursor-default">
+            <!-- Order Box Pending -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg cursor-default">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/30">
+                        <Package class="w-6 h-6 text-white" />
+                    </div>
+                    <span v-if="(boxOrderStats.pending_orders || 0) > 0" class="px-2 py-1 text-xs font-medium rounded-full bg-amber-100 text-amber-700">
+                        Menunggu
+                    </span>
+                </div>
                 <h3 class="text-sm font-medium text-gray-500">Order Box Pending</h3>
-                <p class="text-2xl font-bold text-orange-600 mt-2">
+                <p class="text-2xl font-bold text-gray-800 mt-1">
                     {{ boxOrderStats.pending_orders || 0 }}
                 </p>
+                <p class="text-xs text-gray-400 mt-1">order menunggu proses</p>
             </div>
 
-            <div class="bg-white rounded-lg shadow p-6 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg cursor-default">
+            <!-- Total Partners -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg cursor-default">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center shadow-lg shadow-orange-400/30">
+                        <Users class="w-6 h-6 text-white" />
+                    </div>
+                </div>
                 <h3 class="text-sm font-medium text-gray-500">Total Partners</h3>
-                <p class="text-2xl font-bold text-purple-600 mt-2">
+                <p class="text-2xl font-bold text-gray-800 mt-1">
                     {{ quickStats.total_partners || 0 }}
                 </p>
+                <p class="text-xs text-gray-400 mt-1">mitra aktif</p>
             </div>
         </div>
 
         <!-- Revenue Line Chart -->
-        <div class="bg-white rounded-lg shadow mb-8">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 mb-8">
             <div class="px-6 py-4 border-b flex justify-between items-center">
-                <h3 class="text-lg font-semibold text-gray-800">📈 Trend Penjualan</h3>
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-md shadow-orange-500/20">
+                        <BarChart3 class="w-5 h-5 text-white" />
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-800">Trend Penjualan</h3>
+                </div>
                 <div class="flex gap-2">
                     <button
                         @click="chartTab = 'daily'"
                         :class="[
                             'px-4 py-1 rounded-full text-sm transition-colors',
                             chartTab === 'daily'
-                                ? 'bg-blue-600 text-white'
+                                ? 'bg-orange-500 text-white'
                                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                         ]"
                     >
@@ -260,7 +315,7 @@ const closeOrderModal = () => {
                         :class="[
                             'px-4 py-1 rounded-full text-sm transition-colors',
                             chartTab === 'weekly'
-                                ? 'bg-blue-600 text-white'
+                                ? 'bg-orange-500 text-white'
                                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                         ]"
                     >
@@ -271,7 +326,7 @@ const closeOrderModal = () => {
                         :class="[
                             'px-4 py-1 rounded-full text-sm transition-colors',
                             chartTab === 'monthly'
-                                ? 'bg-blue-600 text-white'
+                                ? 'bg-orange-500 text-white'
                                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                         ]"
                     >
@@ -391,7 +446,7 @@ const closeOrderModal = () => {
                     <div class="grid grid-cols-3 gap-3 text-sm">
                         <div>
                             <div class="text-gray-500 text-xs">Total</div>
-                            <div class="font-bold text-blue-600">{{ formatMoney(hoveredPoint.revenue) }}</div>
+                            <div class="font-bold text-orange-600">{{ formatMoney(hoveredPoint.revenue) }}</div>
                         </div>
                         <div>
                             <div class="text-gray-500 text-xs">Konsinyasi</div>
@@ -413,15 +468,21 @@ const closeOrderModal = () => {
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             <!-- Session History -->
-            <div class="bg-white rounded-lg shadow">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100">
                 <div class="px-6 py-4 border-b flex justify-between items-center">
-                    <h3 class="text-lg font-semibold text-gray-800">📋 Riwayat Sesi</h3>
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-md shadow-emerald-500/20">
+                            <ClipboardList class="w-5 h-5 text-white" />
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-800">Riwayat Sesi</h3>
+                    </div>
                     <a
                         href="/admin/reports/daily"
                         target="_blank"
-                        class="text-sm text-blue-600 hover:text-blue-800"
+                        class="flex items-center gap-1 text-sm text-orange-600 hover:text-orange-700"
                     >
-                        📥 Laporan Hari Ini
+                        <FileText class="w-4 h-4" />
+                        Laporan Hari Ini
                     </a>
                 </div>
                 <div class="p-4 max-h-96 overflow-y-auto">
@@ -456,23 +517,25 @@ const closeOrderModal = () => {
                                 </div>
                                 <div>
                                     <span class="text-gray-500">Revenue:</span>
-                                    <span class="font-medium text-blue-600"> {{ formatMoney(session.consignments?.reduce((sum, c) => sum + (c.subtotal_income || 0), 0) || 0) }}</span>
+                                    <span class="font-medium text-emerald-600"> {{ formatMoney(session.consignments?.reduce((sum, c) => sum + (c.subtotal_income || 0), 0) || 0) }}</span>
                                 </div>
                             </div>
                             <div class="flex justify-end gap-2 pt-2 border-t">
                                 <button
                                     @click="openSessionDetail(session)"
-                                    class="text-xs text-gray-600 hover:text-gray-800 px-2 py-1 rounded hover:bg-gray-100"
+                                    class="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-800 px-2 py-1 rounded hover:bg-gray-100"
                                 >
-                                    👁️ Detail
+                                    <Eye class="w-3 h-3" />
+                                    Detail
                                 </button>
                                 <a
                                     v-if="session.status === 'closed'"
                                     :href="`/admin/reports/session/${session.id}`"
                                     target="_blank"
-                                    class="text-xs text-blue-600 hover:text-blue-800 px-2 py-1 rounded hover:bg-blue-50"
+                                    class="flex items-center gap-1 text-xs text-orange-600 hover:text-orange-700 px-2 py-1 rounded hover:bg-orange-50"
                                 >
-                                    📄 Download PDF
+                                    <FileText class="w-3 h-3" />
+                                    Download PDF
                                 </a>
                             </div>
                         </div>
@@ -481,9 +544,14 @@ const closeOrderModal = () => {
             </div>
 
             <!-- Box Order History -->
-            <div class="bg-white rounded-lg shadow">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100">
                 <div class="px-6 py-4 border-b">
-                    <h3 class="text-lg font-semibold text-gray-800">📦 Riwayat Box Order</h3>
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-md shadow-orange-500/20">
+                            <Package class="w-5 h-5 text-white" />
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-800">Riwayat Box Order</h3>
+                    </div>
                 </div>
                 <div class="p-4 max-h-96 overflow-y-auto">
                     <div v-if="boxOrderHistory.length === 0" class="text-gray-500 text-center py-8">
@@ -534,16 +602,18 @@ const closeOrderModal = () => {
                             <div class="flex justify-end gap-2 pt-2 border-t">
                                 <button
                                     @click="openOrderDetail(order)"
-                                    class="text-xs text-gray-600 hover:text-gray-800 px-2 py-1 rounded hover:bg-gray-100"
+                                    class="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-800 px-2 py-1 rounded hover:bg-gray-100"
                                 >
-                                    👁️ Detail
+                                    <Eye class="w-3 h-3" />
+                                    Detail
                                 </button>
                                 <a
                                     :href="`/pos/box/${order.id}/receipt`"
                                     target="_blank"
-                                    class="text-xs text-blue-600 hover:text-blue-800 px-2 py-1 rounded hover:bg-blue-50"
+                                    class="flex items-center gap-1 text-xs text-orange-600 hover:text-orange-700 px-2 py-1 rounded hover:bg-orange-50"
                                 >
-                                    📄 Kwitansi
+                                    <FileText class="w-3 h-3" />
+                                    Kwitansi
                                 </a>
                             </div>
                         </div>
@@ -553,22 +623,27 @@ const closeOrderModal = () => {
         </div>
 
         <!-- Box Order Stats -->
-        <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">📦 Statistik Box Order</h3>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-md shadow-amber-500/20">
+                    <ShoppingBag class="w-5 h-5 text-white" />
+                </div>
+                <h3 class="text-lg font-semibold text-gray-800">Statistik Box Order</h3>
+            </div>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="text-center p-4 bg-blue-50 rounded-lg">
-                    <p class="text-2xl font-bold text-blue-600">{{ boxOrderStats.today_orders || 0 }}</p>
+                <div class="text-center p-4 bg-orange-50 rounded-xl border border-orange-100">
+                    <p class="text-2xl font-bold text-orange-600">{{ boxOrderStats.today_orders || 0 }}</p>
                     <p class="text-sm text-gray-600">Order Hari Ini</p>
                 </div>
-                <div class="text-center p-4 bg-green-50 rounded-lg">
-                    <p class="text-2xl font-bold text-green-600">{{ formatMoney(boxOrderStats.today_revenue || 0) }}</p>
+                <div class="text-center p-4 bg-emerald-50 rounded-xl border border-emerald-100">
+                    <p class="text-2xl font-bold text-emerald-600">{{ formatMoney(boxOrderStats.today_revenue || 0) }}</p>
                     <p class="text-sm text-gray-600">Revenue Hari Ini</p>
                 </div>
-                <div class="text-center p-4 bg-purple-50 rounded-lg">
-                    <p class="text-2xl font-bold text-purple-600">{{ boxOrderStats.month_orders || 0 }}</p>
+                <div class="text-center p-4 bg-amber-50 rounded-xl border border-amber-100">
+                    <p class="text-2xl font-bold text-amber-600">{{ boxOrderStats.month_orders || 0 }}</p>
                     <p class="text-sm text-gray-600">Order Bulan Ini</p>
                 </div>
-                <div class="text-center p-4 bg-orange-50 rounded-lg">
+                <div class="text-center p-4 bg-orange-50 rounded-xl border border-orange-100">
                     <p class="text-2xl font-bold text-orange-600">{{ formatMoney(boxOrderStats.month_revenue || 0) }}</p>
                     <p class="text-sm text-gray-600">Revenue Bulan Ini</p>
                 </div>
@@ -582,13 +657,15 @@ const closeOrderModal = () => {
                 class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
                 @click.self="closeSessionModal"
             >
-                <div class="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                <div class="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
                     <div class="p-4 border-b flex justify-between items-center sticky top-0 bg-white">
                         <div>
                             <h3 class="font-semibold text-gray-800">Detail Sesi Toko</h3>
                             <p class="text-sm text-gray-500">{{ selectedSession?.user?.name }}</p>
                         </div>
-                        <button @click="closeSessionModal" class="text-gray-400 hover:text-gray-600">✕</button>
+                        <button @click="closeSessionModal" class="p-1 text-gray-400 hover:text-gray-600 rounded hover:bg-gray-100">
+                            <X class="w-5 h-5" />
+                        </button>
                     </div>
                     <div class="p-4" v-if="selectedSession">
                         <!-- Session Info -->
@@ -644,7 +721,7 @@ const closeOrderModal = () => {
                                         <td class="text-center px-3 py-2">{{ selectedSession.consignments?.reduce((s, c) => s + c.qty_initial, 0) }}</td>
                                         <td class="text-center px-3 py-2 text-green-600">{{ selectedSession.consignments?.reduce((s, c) => s + c.qty_sold, 0) }}</td>
                                         <td class="text-center px-3 py-2">{{ selectedSession.consignments?.reduce((s, c) => s + c.qty_remaining, 0) }}</td>
-                                        <td class="text-right px-3 py-2 text-blue-600">{{ formatMoney(selectedSession.consignments?.reduce((s, c) => s + c.subtotal_income, 0)) }}</td>
+                                        <td class="text-right px-3 py-2 text-emerald-600">{{ formatMoney(selectedSession.consignments?.reduce((s, c) => s + c.subtotal_income, 0)) }}</td>
                                     </tr>
                                 </tfoot>
                             </table>
@@ -657,9 +734,10 @@ const closeOrderModal = () => {
                                 v-if="selectedSession.status === 'closed'"
                                 :href="`/admin/reports/session/${selectedSession.id}`"
                                 target="_blank"
-                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                                class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 shadow-md"
                             >
-                                📄 Download PDF
+                                <FileText class="w-4 h-4" />
+                                Download PDF
                             </a>
                         </div>
                     </div>
@@ -674,13 +752,15 @@ const closeOrderModal = () => {
                 class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
                 @click.self="closeOrderModal"
             >
-                <div class="bg-white rounded-lg w-full max-w-lg max-h-[90vh] overflow-y-auto">
+                <div class="bg-white rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
                     <div class="p-4 border-b flex justify-between items-center sticky top-0 bg-white">
                         <div>
                             <h3 class="font-semibold text-gray-800">Detail Box Order</h3>
                             <p class="text-sm text-gray-500">{{ selectedOrder?.customer_name }}</p>
                         </div>
-                        <button @click="closeOrderModal" class="text-gray-400 hover:text-gray-600">✕</button>
+                        <button @click="closeOrderModal" class="p-1 text-gray-400 hover:text-gray-600 rounded hover:bg-gray-100">
+                            <X class="w-5 h-5" />
+                        </button>
                     </div>
                     <div class="p-4" v-if="selectedOrder">
                         <!-- Order Info -->
@@ -750,9 +830,10 @@ const closeOrderModal = () => {
                             <a 
                                 :href="`/storage/${selectedOrder.payment_proof_path}`" 
                                 target="_blank"
-                                class="text-blue-600 hover:text-blue-800 text-sm"
+                                class="flex items-center gap-2 text-orange-600 hover:text-orange-700 text-sm"
                             >
-                                📷 Lihat Bukti Pembayaran
+                                <Image class="w-4 h-4" />
+                                Lihat Bukti Pembayaran
                             </a>
                         </div>
 
@@ -762,9 +843,10 @@ const closeOrderModal = () => {
                             <a
                                 :href="`/pos/box/${selectedOrder.id}/receipt`"
                                 target="_blank"
-                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                                class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 shadow-md"
                             >
-                                📄 Download Kwitansi
+                                <FileText class="w-4 h-4" />
+                                Download Kwitansi
                             </a>
                         </div>
                     </div>

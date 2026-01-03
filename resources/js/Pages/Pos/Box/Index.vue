@@ -34,7 +34,23 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    hasActiveSession: {
+        type: Boolean,
+        default: false,
+    },
+    activeSession: {
+        type: Object,
+        default: null,
+    },
 });
+
+// Session info for sidebar status
+const sessionInfo = computed(() => ({
+  shiftName: props.activeSession?.shift_name ?? null,
+  openingBalance: props.activeSession?.opening_cash ?? 0,
+  isActive: props.hasActiveSession,
+  openedAt: props.activeSession?.opened_at ?? null,
+}));
 
 // Countdown timer state
 const countdowns = ref({});
@@ -224,7 +240,7 @@ const statusOptions = [
 <template>
     <Head title="Order Box" />
 
-    <EmployeeLayout>
+    <EmployeeLayout :session-info="sessionInfo">
         <template #header>
             <div class="flex items-center gap-2">
                 <Package class="w-6 h-6 text-gray-600" />
@@ -234,10 +250,10 @@ const statusOptions = [
 
         <!-- Main Container with Fixed Height - No Page Scroll -->
         <div class="h-[calc(100vh-180px)] lg:h-[calc(100vh-130px)] flex flex-col gap-3 overflow-hidden">
-            <!-- Create New Order Button -->
+            <!-- Create New Order Button - Green Gradient -->
             <Link
                 href="/pos/box/create"
-                class="flex-shrink-0 flex items-center justify-center gap-2 w-full bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white py-4 rounded-2xl font-semibold text-center shadow-xl shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:scale-[1.01] transition-all duration-300 group"
+                class="flex-shrink-0 flex items-center justify-center gap-2 w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white py-4 rounded-2xl font-semibold text-center shadow-xl shadow-emerald-500/25 hover:shadow-emerald-500/40 hover:scale-[1.01] transition-all duration-300 group"
             >
                 <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center group-hover:bg-white/30 transition-colors">
                     <Plus class="w-5 h-5" />
@@ -249,8 +265,8 @@ const statusOptions = [
             <div class="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-0">
                 <!-- Left Column: Countdown + Today Orders -->
                 <div class="flex flex-col gap-4 min-h-0">
-                    <!-- Countdown Widget -->
-                    <div v-if="upcomingOrders.length > 0" class="flex-shrink-0 bg-gradient-to-br from-violet-500 via-muted0 to-fuchsia-500 rounded-2xl shadow-xl shadow-muted0/20 overflow-hidden">
+                    <!-- Countdown Widget - Orange Gradient -->
+                    <div v-if="upcomingOrders.length > 0" class="flex-shrink-0 bg-gradient-to-br from-orange-500 via-orange-600 to-amber-500 rounded-2xl shadow-xl shadow-orange-500/25 overflow-hidden">
                         <div class="px-5 py-4 flex items-center gap-3 border-b border-white/10">
                             <div class="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
                                 <Clock class="w-5 h-5 text-white" />
@@ -371,12 +387,12 @@ const statusOptions = [
                     </div>
                 </div>
 
-                <!-- Right Column: Upcoming Orders -->
+                <!-- Right Column: Upcoming Orders - Green Theme -->
                 <div class="min-h-0 bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 flex flex-col overflow-hidden">
-                    <div class="flex-shrink-0 px-5 py-4 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-muted">
+                    <div class="flex-shrink-0 px-5 py-4 border-b border-gray-100 bg-gradient-to-r from-emerald-50 to-green-50">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-muted0 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                                <div class="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/30">
                                     <CalendarDays class="w-5 h-5 text-white" />
                                 </div>
                                 <div>
@@ -384,7 +400,7 @@ const statusOptions = [
                                     <p class="text-xs text-gray-500">{{ upcomingOrders.length }} order</p>
                                 </div>
                             </div>
-                            <span class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-semibold">
+                            <span class="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-semibold">
                                 Upcoming
                             </span>
                         </div>

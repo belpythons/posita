@@ -2,9 +2,9 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { Link, usePage } from '@inertiajs/vue3'
 import { toast } from 'vue-sonner'
-import { useTheme } from '@/composables/useTheme'
 import { Sonner, DropdownMenu, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel } from '@/Components/ui'
 import CommandMenu from '@/Components/CommandMenu.vue'
+import { useTheme } from '@/composables/useTheme'
 import {
   Store,
   Package,
@@ -13,11 +13,13 @@ import {
   LogOut,
   User,
   ChevronDown,
-  Sun,
-  Moon,
   PanelRightClose,
-  PanelRightOpen
+  PanelRightOpen,
+  Sun,
+  Moon
 } from 'lucide-vue-next'
+
+const { toggleTheme, isDark } = useTheme()
 
 /**
  * @typedef {Object} SessionInfo
@@ -42,7 +44,6 @@ const props = defineProps({
 
 const page = usePage()
 const user = computed(() => page.props.auth?.user)
-const { theme, toggleTheme } = useTheme()
 
 // Try to get session info from page props if not passed directly
 const session = computed(() => {
@@ -79,10 +80,7 @@ watch(
   { deep: true, immediate: true }
 )
 
-// Force light mode for Employee
-onMounted(() => {
-  document.documentElement.classList.remove('dark', 'theme-neutral')
-})
+// Theme is now initialized once in app.js - no need to force here
 
 const formatCurrency = (value) => {
   return new Intl.NumberFormat('id-ID', {
@@ -173,14 +171,10 @@ const toggleSidebar = () => {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
 
-            <!-- Theme Toggle -->
             <DropdownMenuItem @click="toggleTheme">
-              <Sun v-if="theme === 'admin'" class="w-4 h-4 mr-2" />
-              <Moon v-else class="w-4 h-4 mr-2" />
-              {{ theme === 'employee' ? 'Admin Theme' : 'Employee Theme' }}
+              <component :is="isDark ? Sun : Moon" class="w-4 h-4 mr-2" />
+              <span>Switch to {{ isDark ? 'Light' : 'Dark' }} Theme</span>
             </DropdownMenuItem>
-
-            <DropdownMenuSeparator />
 
             <DropdownMenuItem as-child destructive>
               <Link href="/logout" method="post" as="button" class="flex items-center w-full">
@@ -218,14 +212,11 @@ const toggleSidebar = () => {
       </div>
     </header>
 
-    <!-- Page Title Header -->
-    <div v-if="$slots.header" class="bg-card border-b border-border px-4 lg:px-6 py-4">
-      <slot name="header" />
-    </div>
-
-    <!-- Main Content -->
-    <main class="p-4 lg:p-6 lg:max-w-5xl">
-      <slot />
+    <!-- Main Content - Centered with max width -->
+    <main class="p-4 lg:p-6">
+      <div class="mx-auto max-w-7xl">
+        <slot />
+      </div>
     </main>
 
     <!-- Desktop Right Sidebar Navigation -->
@@ -254,8 +245,8 @@ const toggleSidebar = () => {
           leave-to-class="opacity-0"
           mode="out-in"
         >
-          <h2 v-if="!isSidebarCollapsed" class="text-sm font-semibold text-muted-foreground">Navigation</h2>
-          <span v-else class="text-primary font-bold">P</span>
+          <span v-if="!isSidebarCollapsed" class="text-primary font-bold text-lg">Posita</span>
+          <span v-else class="text-primary font-bold text-lg">Ita</span>
         </Transition>
       </div>
 

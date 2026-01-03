@@ -226,55 +226,55 @@ const formatCurrency = (value) => {
             </p>
         </div>
 
-        <!-- Modal -->
-        <div v-if="showModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
-                <div class="px-6 py-4 border-b">
-                    <h3 class="text-lg font-semibold">
+        <!-- Modal - Dark mode compatible -->
+        <div v-if="showModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div class="bg-card border border-border rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+                <div class="px-6 py-4 border-b border-border">
+                    <h3 class="text-lg font-semibold text-foreground">
                         {{ editingTemplate ? 'Edit Template' : 'Tambah Template' }}
                     </h3>
                 </div>
                 <form @submit.prevent="submit" class="p-6 space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Nama</label>
+                        <label class="block text-sm font-medium text-foreground mb-1">Nama</label>
                         <input
                             v-model="form.name"
                             type="text"
-                            class="w-full border rounded-lg px-3 py-2"
+                            class="w-full border border-input bg-background text-foreground rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary"
                             required
                         />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Tipe</label>
-                        <select v-model="form.type" class="w-full border rounded-lg px-3 py-2">
+                        <label class="block text-sm font-medium text-foreground mb-1">Tipe</label>
+                        <select v-model="form.type" class="w-full border border-input bg-background text-foreground rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary">
                             <option value="heavy_meal">Makan Berat</option>
                             <option value="snack_box">Snack Box</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Harga</label>
+                        <label class="block text-sm font-medium text-foreground mb-1">Harga</label>
                         <input
                             v-model="form.price"
                             type="number"
                             min="0"
-                            class="w-full border rounded-lg px-3 py-2"
+                            class="w-full border border-input bg-background text-foreground rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary"
                             required
                         />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Isi Box</label>
+                        <label class="block text-sm font-medium text-foreground mb-1">Isi Box</label>
                         <div class="flex gap-2 mb-2">
                             <input
                                 v-model="newItem"
                                 type="text"
-                                class="flex-1 border rounded-lg px-3 py-2"
+                                class="flex-1 border border-input bg-background text-foreground rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary focus:border-primary"
                                 placeholder="Tambah item..."
                                 @keyup.enter.prevent="addItem"
                             />
                             <button
                                 type="button"
                                 @click="addItem"
-                                class="bg-gray-200 px-3 py-2 rounded-lg hover:bg-gray-300"
+                                class="bg-muted text-foreground px-3 py-2 rounded-lg hover:bg-muted/80 transition-colors"
                             >
                                 +
                             </button>
@@ -283,10 +283,10 @@ const formatCurrency = (value) => {
                             <span
                                 v-for="(item, idx) in form.items_json"
                                 :key="idx"
-                                class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm flex items-center gap-1"
+                                class="bg-primary/10 text-primary px-2 py-1 rounded-full text-sm flex items-center gap-1"
                             >
                                 {{ item }}
-                                <button type="button" @click="removeItem(idx)" class="text-blue-600 hover:text-blue-800">×</button>
+                                <button type="button" @click="removeItem(idx)" class="text-primary hover:text-primary/80">×</button>
                             </span>
                         </div>
                     </div>
@@ -295,22 +295,22 @@ const formatCurrency = (value) => {
                             v-model="form.is_active"
                             type="checkbox"
                             id="is_active"
-                            class="mr-2"
+                            class="mr-2 rounded border-input text-primary focus:ring-primary"
                         />
-                        <label for="is_active" class="text-sm text-gray-700">Aktif</label>
+                        <label for="is_active" class="text-sm text-foreground">Aktif</label>
                     </div>
-                    <div class="flex justify-end gap-3 pt-4">
+                    <div class="flex justify-end gap-3 pt-4 border-t border-border">
                         <button
                             type="button"
                             @click="showModal = false"
-                            class="px-4 py-2 text-gray-600 hover:text-gray-800"
+                            class="px-4 py-2 text-muted-foreground hover:text-foreground transition-colors"
                         >
                             Batal
                         </button>
                         <button
                             type="submit"
                             :disabled="form.processing"
-                            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                            class="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-colors"
                         >
                             {{ form.processing ? 'Menyimpan...' : 'Simpan' }}
                         </button>

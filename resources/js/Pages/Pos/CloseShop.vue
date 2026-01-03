@@ -4,6 +4,7 @@ import { Head, useForm, Link } from '@inertiajs/vue3';
 import { ref, computed, reactive } from 'vue';
 import { formatMoney } from '@/utils/formatMoney';
 import { AlertTriangle, BarChart3, Package, Wallet, Lock, Store, Loader2 } from 'lucide-vue-next';
+import ActionButton from '@/Components/ActionButton.vue';
 
 const props = defineProps({
     hasSession: {
@@ -107,31 +108,39 @@ const validateLeftover = (item) => {
         leftoverQty[item.id] = 0;
     }
 };
+
+// Session info for sidebar status
+const sessionInfo = computed(() => ({
+  shiftName: props.currentSession?.shift_name ?? 'Sesi Aktif',
+  openingBalance: props.currentSession?.opening_cash ?? props.summary?.opening_cash ?? 0,
+  isActive: props.hasSession,
+  openedAt: props.currentSession?.opened_at ?? null,
+}));
 </script>
 
 <template>
     <Head title="Tutup Toko" />
 
-    <EmployeeLayout>
+    <EmployeeLayout :session-info="sessionInfo">
         <template #header>
             <h2 class="text-lg font-semibold text-gray-800">Tutup Toko</h2>
         </template>
 
         <div class="max-w-lg mx-auto">
             <!-- No active session -->
-            <div v-if="!hasSession" class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-                <div class="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center mx-auto mb-4">
-                    <AlertTriangle class="w-6 h-6 text-yellow-600" />
+            <div v-if="!hasSession" class="bg-orange-50 border border-orange-200 rounded-lg p-6 text-center">
+                <div class="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center mx-auto mb-4">
+                    <AlertTriangle class="w-6 h-6 text-orange-600" />
                 </div>
-                <h3 class="text-lg font-semibold text-yellow-800 mb-2">
+                <h3 class="text-lg font-semibold text-orange-800 mb-2">
                     Tidak Ada Sesi Aktif
                 </h3>
-                <p class="text-yellow-600 mb-4">
+                <p class="text-orange-600 mb-4">
                     Anda belum membuka toko hari ini
                 </p>
                 <Link
                     href="/pos/open"
-                    class="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-2 rounded-lg hover:bg-primary/90"
+                    class="inline-flex items-center gap-2 bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700 shadow-lg shadow-emerald-500/30 transition-all font-semibold"
                 >
                     <Store class="w-5 h-5" />
                     Buka Toko
@@ -157,7 +166,7 @@ const validateLeftover = (item) => {
                         </div>
                         <div>
                             <p class="text-gray-500">Total Profit</p>
-                            <p class="font-medium text-blue-600">{{ formatMoney(calculatedTotals.total_profit) }}</p>
+                            <p class="font-medium text-emerald-700">{{ formatMoney(calculatedTotals.total_profit) }}</p>
                         </div>
                         <div>
                             <p class="text-gray-500">Kas Akhir (Estimasi)</p>
@@ -246,14 +255,14 @@ const validateLeftover = (item) => {
                                     required
                                 />
                             </div>
-                            <p v-if="form.errors.actual_cash" class="text-red-500 text-sm mt-1">
+                            <p v-if="form.errors.actual_cash" class="text-xs text-orange-500 mt-1">
                                 {{ form.errors.actual_cash }}
                             </p>
                         </div>
 
                         <!-- Cash Difference -->
-                        <div v-if="form.actual_cash" class="p-3 rounded-lg" :class="cashDifference <= 0 ? 'bg-green-50' : 'bg-red-50'">
-                            <p class="text-sm" :class="cashDifference <= 0 ? 'text-green-800' : 'text-red-800'">
+                        <div v-if="form.actual_cash" class="p-3 rounded-lg" :class="cashDifference <= 0 ? 'bg-emerald-50' : 'bg-orange-50'">
+                            <p class="text-sm" :class="cashDifference <= 0 ? 'text-emerald-800' : 'text-orange-800'">
                                 Selisih: {{ formatMoney(Math.abs(cashDifference)) }}
                                 <span v-if="cashDifference > 0">(Kurang)</span>
                                 <span v-else-if="cashDifference < 0">(Lebih)</span>
@@ -273,15 +282,16 @@ const validateLeftover = (item) => {
                             ></textarea>
                         </div>
 
-                        <button
+                        <ActionButton
                             type="submit"
+                            variant="negative"
+                            :icon="Lock"
+                            :loading="form.processing"
                             :disabled="form.processing"
-                            class="w-full bg-primary text-primary-foreground py-3 rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2"
+                            full-width
                         >
-                            <Loader2 v-if="form.processing" class="w-5 h-5 animate-spin" />
-                            <Lock v-else class="w-5 h-5" />
                             {{ form.processing ? 'Menutup...' : 'Tutup Toko' }}
-                        </button>
+                        </ActionButton>
                     </form>
                 </div>
             </div>

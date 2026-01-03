@@ -7,6 +7,7 @@ use App\Models\BoxOrder;
 use App\Models\BoxTemplate;
 use App\Services\AdminDataService;
 use App\Services\BoxOrderService;
+use App\Services\ShopSessionService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -16,7 +17,8 @@ class BoxOrderController extends Controller
 {
     public function __construct(
         protected BoxOrderService $boxOrderService,
-        protected AdminDataService $adminDataService
+        protected AdminDataService $adminDataService,
+        protected ShopSessionService $shopSessionService
     ) {
     }
 
@@ -25,12 +27,17 @@ class BoxOrderController extends Controller
      */
     public function index(): Response
     {
+        $user = auth()->user();
+        $activeSession = $this->shopSessionService->getActiveSession($user);
+
         $upcomingOrders = $this->boxOrderService->getUpcomingOrdersWithCountdown();
         $todayOrders = $this->boxOrderService->getTodayOrders();
 
         return Inertia::render('Pos/Box/Index', [
             'upcomingOrders' => $upcomingOrders,
             'todayOrders' => $todayOrders,
+            'hasActiveSession' => $activeSession !== null,
+            'activeSession' => $activeSession,
         ]);
     }
 
@@ -39,12 +46,17 @@ class BoxOrderController extends Controller
      */
     public function create(BoxTemplate $template = null): Response
     {
+        $user = auth()->user();
+        $activeSession = $this->shopSessionService->getActiveSession($user);
+
         // Get all active box templates for dropdown
         $boxTemplates = $this->adminDataService->getBoxTemplates();
 
         return Inertia::render('Pos/Box/Create', [
             'selectedTemplate' => $template,
             'boxTemplates' => $boxTemplates,
+            'hasActiveSession' => $activeSession !== null,
+            'activeSession' => $activeSession,
         ]);
     }
 

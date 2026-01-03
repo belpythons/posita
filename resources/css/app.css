@@ -3,11 +3,9 @@
 @tailwind utilities;
 
 /* ============================================
-   POSITA - THREE PERSONA THEMING SYSTEM
+   POSITA - UNIFIED LIGHT THEME
    ============================================
-   - :root = Employee (Light, Emerald Green)
-   - .dark = Admin (Dark, Violet)
-   - .theme-neutral = Guest/Auth (Light, Orange)
+   Single theme: Light Mode with Orange Primary
    ============================================ */
 
 @layer base {
@@ -15,13 +13,13 @@
     --radius: 0.5rem;
 
     /* ----------------------------------------
-       EMPLOYEE THEME (Default Light)
-       Fresh - Emerald Green Primary
+       UNIFIED THEME - Green Primary, Orange Accent
+       Light Mode with Emerald branding
        ---------------------------------------- */
 
     /* Core */
-    --background: 152 81% 96%;
-    /* emerald-50 #ecfdf5 */
+    --background: 151 81% 96%;
+    /* emerald-50 #f0fdf4 */
     --foreground: 222 47% 11%;
     /* slate-900 */
 
@@ -54,6 +52,7 @@
     --sidebar: 0 0% 100%;
     --sidebar-foreground: 222 47% 11%;
     --sidebar-hover: 152 30% 95%;
+    /* emerald tint */
 
     /* Borders & Inputs */
     --border: 220 13% 91%;
@@ -61,113 +60,50 @@
     --ring: 161 94% 30%;
     /* Emerald ring */
 
-    /* Destructive */
-    --destructive: 0 84% 60%;
+    /* Destructive - Orange (no red) */
+    --destructive: 25 95% 53%;
+    /* orange-500 */
     --destructive-foreground: 0 0% 100%;
   }
 
-  /* ----------------------------------------
-     ADMIN THEME (Dark Mode)
-     Professional - Violet Primary
-     ---------------------------------------- */
+  /* Dark Theme (Old Admin Theme - Violet) */
   .dark {
-    /* Core */
-    --background: 222 47% 4%;
-    /* slate-950 #020617 */
+    --background: 222 47% 11%;
+    /* slate-900 */
     --foreground: 210 40% 98%;
     /* slate-50 */
 
-    /* Primary: Violet */
-    --primary: 263 70% 50%;
-    /* violet-600 #7c3aed */
-    --primary-foreground: 0 0% 100%;
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 98%;
 
-    /* Secondary: Dark Gray */
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 262 83% 58%;
+    /* violet-600 */
+    --primary-foreground: 210 40% 98%;
+
     --secondary: 217 33% 17%;
-    /* slate-800 #1e293b */
+    /* slate-800 */
     --secondary-foreground: 210 40% 98%;
 
-    /* Accent: Emerald */
-    --accent: 160 84% 39%;
-    /* emerald-500 #10b981 */
-    --accent-foreground: 0 0% 100%;
-
-    /* Muted */
     --muted: 217 33% 17%;
     --muted-foreground: 215 20% 65%;
 
-    /* Cards & Surfaces */
-    --card: 222 47% 7%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222 47% 7%;
-    --popover-foreground: 210 40% 98%;
+    --accent: 262 83% 58%;
+    /* violet-600 */
+    --accent-foreground: 210 40% 98%;
 
-    /* Sidebar */
-    --sidebar: 222 47% 7%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-hover: 217 33% 17%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
 
-    /* Borders & Inputs */
     --border: 217 33% 17%;
     --input: 217 33% 17%;
-    --ring: 263 70% 50%;
-    /* Violet ring */
+    --ring: 224 76% 48%;
 
-    /* Destructive */
-    --destructive: 0 62% 30%;
-    --destructive-foreground: 0 0% 100%;
-  }
-
-  /* ----------------------------------------
-     NEUTRAL THEME (Guest/Auth Pages)
-     Warm - Orange Primary, Green Secondary
-     ---------------------------------------- */
-  .theme-neutral {
-    /* Core */
-    --background: 210 40% 98%;
-    /* slate-50 */
-    --foreground: 222 47% 11%;
-    /* slate-900 */
-
-    /* Primary: Orange */
-    --primary: 25 95% 53%;
-    /* orange-500 #f97316 */
-    --primary-foreground: 0 0% 100%;
-
-    /* Secondary: Emerald Green */
-    --secondary: 161 94% 30%;
-    /* emerald-600 #059669 */
-    --secondary-foreground: 0 0% 100%;
-
-    /* Accent: Violet */
-    --accent: 258 90% 66%;
-    /* violet-500 #8b5cf6 */
-    --accent-foreground: 0 0% 100%;
-
-    /* Muted */
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
-
-    /* Cards & Surfaces */
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-
-    /* Sidebar (Not used in guest) */
-    --sidebar: 0 0% 100%;
-    --sidebar-foreground: 222 47% 11%;
-    --sidebar-hover: 210 40% 96%;
-
-    /* Borders & Inputs */
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 25 95% 53%;
-    /* Orange ring */
-
-    /* Destructive */
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
+    --sidebar: 222 47% 11%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-hover: 217 33% 17%;
   }
 
   /* Base Styles */
@@ -190,121 +126,250 @@
     @apply bg-white/70 backdrop-blur-md border border-white/30;
   }
 
-  .dark .glass {
-    @apply bg-slate-900/70 backdrop-blur-md border border-white/10;
-  }
-
   .glass-dark {
     @apply bg-black/30 backdrop-blur-md border border-white/10;
   }
 
   /* ----------------------------------------
-     CARD HOVER EFFECTS
+     BUTTON VARIANTS
      ---------------------------------------- */
-  .card-hover {
-    @apply transition-all duration-300 ease-out;
+  .btn-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90 transition-colors;
   }
 
-  .card-hover:hover {
-    @apply shadow-lg;
-    transform: translateY(-4px);
+  .btn-secondary {
+    @apply bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors;
+  }
+
+  .btn-accent {
+    @apply bg-accent text-accent-foreground hover:bg-accent/90 transition-colors;
+  }
+
+  .btn-ghost {
+    @apply bg-transparent hover:bg-muted transition-colors;
+  }
+
+  .btn-outline {
+    @apply border border-input bg-transparent hover:bg-accent hover:text-accent-foreground transition-colors;
   }
 
   /* ----------------------------------------
-     BUTTON MICRO-INTERACTIONS
+     FORM INPUT STYLING
      ---------------------------------------- */
-  .btn-press:active {
-    transform: scale(0.98);
+  .input-base {
+    @apply w-full rounded-lg border border-input bg-background px-4 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary transition-all duration-200;
   }
 
-  .active-press {
-    @apply transition-transform duration-150 ease-out;
+  .input-error {
+    @apply border-destructive focus:ring-destructive/25;
   }
 
-  .active-press:active {
-    transform: scale(0.95);
-  }
-
-  /* Bouncy Cart Animation */
-  .animate-bouncy {
-    animation: bouncy 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  }
-
-  /* Success Pulse */
-  .animate-success-glow {
-    animation: success-glow 0.6s ease-out;
+  /* Auth page input (lighter background) */
+  .input-auth {
+    @apply bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:bg-white/15 focus:border-orange-400 focus:ring-orange-400/25;
   }
 
   /* ----------------------------------------
-     STAGGER ANIMATIONS
+     CARD VARIANTS
      ---------------------------------------- */
-  .stagger-1 {
-    animation-delay: 0.1s;
+  .card-default {
+    @apply bg-card text-card-foreground rounded-xl border border-border shadow-sm;
   }
 
-  .stagger-2 {
-    animation-delay: 0.2s;
-  }
-
-  .stagger-3 {
-    animation-delay: 0.3s;
-  }
-
-  .stagger-4 {
-    animation-delay: 0.4s;
-  }
-
-  .stagger-5 {
-    animation-delay: 0.5s;
+  .card-elevated {
+    @apply bg-card text-card-foreground rounded-xl border border-border shadow-lg;
   }
 
   /* ----------------------------------------
-     SAFE AREA INSETS (iOS/Android)
+     STATUS BADGES
      ---------------------------------------- */
-  .pb-safe {
-    padding-bottom: env(safe-area-inset-bottom);
+  .badge-success {
+    @apply bg-emerald-100 text-emerald-700 border-emerald-200;
   }
 
-  .pt-safe {
-    padding-top: env(safe-area-inset-top);
+  .badge-warning {
+    @apply bg-amber-100 text-amber-700 border-amber-200;
   }
 
-  .px-safe {
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
+  .badge-error {
+    @apply bg-red-100 text-red-700 border-red-200;
+  }
+
+  .badge-info {
+    @apply bg-blue-100 text-blue-700 border-blue-200;
+  }
+
+  .badge-neutral {
+    @apply bg-gray-100 text-gray-700 border-gray-200;
   }
 
   /* ----------------------------------------
-     SCROLLBAR STYLING
+     SIDEBAR NAVIGATION
      ---------------------------------------- */
-  .scrollbar-thin::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+  .sidebar-link {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-hover hover:text-sidebar-foreground transition-colors duration-200;
   }
 
-  .scrollbar-thin::-webkit-scrollbar-track {
-    @apply bg-muted rounded-full;
+  .sidebar-link-active {
+    @apply bg-primary text-primary-foreground shadow-sm;
   }
 
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    @apply bg-muted-foreground/30 rounded-full;
+  /* ----------------------------------------
+     TABLE STYLING
+     ---------------------------------------- */
+  .table-header {
+    @apply bg-muted/50 text-foreground font-medium;
   }
 
-  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    @apply bg-muted-foreground/50;
+  .table-row {
+    @apply border-b border-border hover:bg-muted/30 transition-colors;
+  }
+
+  .table-cell {
+    @apply px-4 py-3 text-sm;
+  }
+
+  /* ----------------------------------------
+     DROPDOWN MENU
+     ---------------------------------------- */
+  .dropdown-content {
+    @apply bg-popover text-popover-foreground rounded-lg border border-border shadow-lg;
+  }
+
+  .dropdown-item {
+    @apply px-3 py-2 text-sm cursor-pointer hover:bg-muted transition-colors;
+  }
+
+  .dropdown-item-destructive {
+    @apply text-destructive hover:bg-destructive/10;
+  }
+
+  /* ----------------------------------------
+     CALENDAR/DATETIME
+     ---------------------------------------- */
+  .calendar-day {
+    @apply w-8 h-8 rounded-full flex items-center justify-center text-sm hover:bg-muted cursor-pointer transition-colors;
+  }
+
+  .calendar-day-selected {
+    @apply bg-primary text-primary-foreground;
+  }
+
+  .calendar-day-today {
+    @apply border border-primary text-primary;
+  }
+
+  /* ----------------------------------------
+     STATISTICS CARDS
+     ---------------------------------------- */
+  .stat-card {
+    @apply bg-card rounded-xl border border-border p-5 shadow-sm;
+  }
+
+  .stat-value {
+    @apply text-2xl font-bold text-foreground;
+  }
+
+  .stat-label {
+    @apply text-sm text-muted-foreground;
+  }
+
+  .stat-change-positive {
+    @apply text-emerald-600;
+  }
+
+  .stat-change-negative {
+    @apply text-red-600;
   }
 }
 
 @layer utilities {
-  .animate-fill-forwards {
-    animation-fill-mode: forwards;
+
+  /* Custom scrollbar */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
   }
 
-  .animate-fill-backwards {
-    animation-fill-mode: backwards;
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-transparent;
   }
 
-  .animate-fill-both {
-    animation-fill-mode: both;
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/20 rounded-full;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/40;
+  }
+
+  /* Background pattern */
+  .bg-pattern-dots {
+    background-image: radial-gradient(circle, currentColor 1px, transparent 1px);
+    background-size: 24px 24px;
+    @apply text-primary/10;
+  }
+
+  /* Animation utilities */
+  @keyframes float {
+
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.5s ease-out forwards;
+  }
+
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.4s ease-out forwards;
+  }
+
+  /* Text gradient */
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent;
+  }
+
+  /* Glow effect */
+  .glow-primary {
+    box-shadow: 0 0 20px theme('colors.orange.500 / 30%');
+  }
+
+  .glow-accent {
+    box-shadow: 0 0 20px theme('colors.emerald.500 / 30%');
   }
 }

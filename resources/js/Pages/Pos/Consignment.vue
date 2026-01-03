@@ -3,6 +3,8 @@ import EmployeeLayout from '@/Layouts/EmployeeLayout.vue';
 import { Head, useForm, Link } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import { formatMoney } from '@/utils/formatMoney';
+import { AlertTriangle, Plus, X, Store } from 'lucide-vue-next';
+import ActionButton from '@/Components/ActionButton.vue';
 
 const props = defineProps({
     hasActiveSession: {
@@ -30,6 +32,14 @@ const props = defineProps({
         default: null,
     },
 });
+
+// Session info for sidebar status
+const sessionInfo = computed(() => ({
+  shiftName: props.activeSession?.shift_name ?? null,
+  openingBalance: props.activeSession?.opening_cash ?? 0,
+  isActive: props.hasActiveSession,
+  openedAt: props.activeSession?.opened_at ?? null,
+}));
 
 const showAddModal = ref(false);
 const selectedPartnerId = ref('');
@@ -74,41 +84,57 @@ const submit = () => {
 <template>
     <Head title="Barang Titipan" />
 
-    <EmployeeLayout>
+    <EmployeeLayout :session-info="sessionInfo">
         <template #header>
             <h2 class="text-lg font-semibold text-gray-800">Barang Titipan</h2>
         </template>
 
-        <!-- No active session warning -->
-        <div v-if="!hasActiveSession" class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-            <p class="text-yellow-800 text-center">
-                ⚠️ Buka toko terlebih dahulu
-                <Link href="/pos/open" class="text-blue-600 underline ml-1">Buka Toko</Link>
-            </p>
-        </div>
+   <!-- No active session -->
+            <div v-if="!hasSession" class="bg-orange-50 border border-orange-200 rounded-lg p-6 text-center">
+                <div class="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center mx-auto mb-4">
+                    <AlertTriangle class="w-6 h-6 text-orange-600" />
+                </div>
+                <h3 class="text-lg font-semibold text-orange-800 mb-2">
+                    Tidak Ada Sesi Aktif
+                </h3>
+                <p class="text-orange-600 mb-4">
+                    Anda belum membuka toko hari ini
+                </p>
+                <Link
+                    href="/pos/open"
+                    class="inline-flex items-center gap-2 bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700 shadow-lg shadow-emerald-500/30 transition-all font-semibold"
+                >
+                    <Store class="w-5 h-5" />
+                    Buka Toko
+                </Link>
+            </div>
 
         <div v-else>
             <!-- Summary -->
-            <div class="bg-blue-50 rounded-lg p-4 mb-4">
+            <div class="bg-emerald-50 border border-emerald-100 rounded-lg p-4 mb-4">
                 <div class="flex justify-between items-center">
                     <div>
-                        <p class="text-sm text-blue-600">Total Item: {{ summary?.total_items || 0 }}</p>
-                        <p class="text-sm text-blue-600">Stok Awal Total: {{ summary?.total_qty_initial || 0 }} pcs</p>
+                        <p class="text-sm text-emerald-600">Total Item: {{ summary?.total_items || 0 }}</p>
+                        <p class="text-sm text-emerald-600">Stok Awal Total: {{ summary?.total_qty_initial || 0 }} pcs</p>
                     </div>
                     <div class="text-right">
-                        <p class="text-sm text-blue-600">Estimasi Nilai Stok</p>
-                        <p class="font-bold text-blue-800">{{ formatMoney(summary?.total_stock_value) }}</p>
+                        <p class="text-sm text-emerald-600">Estimasi Nilai Stok</p>
+                        <p class="font-bold text-emerald-800">{{ formatMoney(summary?.total_stock_value) }}</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Add Button -->
-            <button
-                @click="showAddModal = true"
-                class="w-full bg-green-600 text-white py-3 rounded-lg font-medium mb-4 hover:bg-green-700"
-            >
-                + Tambah Barang Titipan
-            </button>
+            <!-- Add Button - Green -->
+            <div class="mb-4">
+                <ActionButton
+                    @click="showAddModal = true"
+                    :icon="Plus"
+                    size="lg"
+                    full-width
+                >
+                    Tambah Barang Titipan
+                </ActionButton>
+            </div>
 
             <!-- Consignment List -->
             <div class="space-y-3">
@@ -137,18 +163,18 @@ const submit = () => {
             </div>
         </div>
 
-        <!-- Add Modal -->
-        <div v-if="showAddModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div class="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-                <div class="px-4 py-3 border-b flex justify-between items-center sticky top-0 bg-white">
-                    <h3 class="font-semibold">Tambah Barang</h3>
-                    <button @click="showAddModal = false" class="text-gray-500">✕</button>
+        <!-- Add Modal - Employee Theme -->
+        <div v-if="showAddModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div class="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+                <div class="px-5 py-4 border-b border-border flex justify-between items-center sticky top-0 bg-card rounded-t-2xl">
+                    <h3 class="font-semibold text-foreground">Tambah Barang</h3>
+                    <button @click="showAddModal = false" class="w-8 h-8 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">✕</button>
                 </div>
 
-                <form @submit.prevent="submit" class="p-4 space-y-4">
+                <form @submit.prevent="submit" class="p-5 space-y-4">
                     <!-- Partner Selection -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Pilih Penyetok</label>
+                        <label class="block text-sm font-medium text-foreground mb-2">Pilih Penyetok</label>
                         <div class="grid grid-cols-2 gap-2">
                             <button
                                 v-for="partner in partners"
@@ -156,10 +182,10 @@ const submit = () => {
                                 type="button"
                                 @click="selectPartner(partner.id)"
                                 :class="[
-                                    'p-2 rounded-lg border text-sm transition-colors',
+                                    'p-3 rounded-xl border text-sm font-medium transition-all',
                                     selectedPartnerId == partner.id
-                                        ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                        : 'border-gray-200 hover:border-gray-300'
+                                        ? 'border-primary bg-primary/10 text-primary shadow-sm'
+                                        : 'border-border hover:border-primary/50 text-foreground'
                                 ]"
                             >
                                 {{ partner.name }}
@@ -169,14 +195,14 @@ const submit = () => {
 
                     <!-- Template Suggestions -->
                     <div v-if="filteredTemplates.length > 0">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Template Produk</label>
+                        <label class="block text-sm font-medium text-foreground mb-2">Template Produk</label>
                         <div class="flex flex-wrap gap-2">
                             <button
                                 v-for="template in filteredTemplates"
                                 :key="template.id"
                                 type="button"
                                 @click="selectTemplate(template)"
-                                class="px-3 py-1 bg-gray-100 rounded-full text-sm hover:bg-gray-200"
+                                class="px-3 py-1.5 bg-muted rounded-full text-sm font-medium text-foreground hover:bg-primary/10 hover:text-primary transition-colors"
                             >
                                 {{ template.name }}
                             </button>
@@ -185,37 +211,37 @@ const submit = () => {
 
                     <!-- Product Name -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Nama Produk</label>
+                        <label class="block text-sm font-medium text-foreground mb-1">Nama Produk</label>
                         <input
                             v-model="form.product_name"
                             type="text"
-                            class="w-full border rounded-lg px-3 py-2"
+                            class="w-full border border-input bg-background text-foreground rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                             required
                         />
                     </div>
 
                     <!-- Quantity -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Jumlah (pcs)</label>
+                        <label class="block text-sm font-medium text-foreground mb-1">Jumlah (pcs)</label>
                         <input
                             v-model="form.qty_initial"
                             type="number"
                             min="1"
-                            class="w-full border rounded-lg px-3 py-2"
+                            class="w-full border border-input bg-background text-foreground rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                             required
                         />
                     </div>
 
                     <!-- Base Price (Buying Price) -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Harga Modal (Beli)</label>
+                        <label class="block text-sm font-medium text-foreground mb-1">Harga Modal (Beli)</label>
                         <div class="relative">
-                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">Rp</span>
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">Rp</span>
                             <input
                                 v-model="form.base_price"
                                 type="number"
                                 min="0"
-                                class="w-full border rounded-lg pl-10 pr-4 py-2"
+                                class="w-full border border-input bg-background text-foreground rounded-xl pl-12 pr-4 py-2.5 focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                                 required
                             />
                         </div>
@@ -223,40 +249,56 @@ const submit = () => {
 
                     <!-- Selling Price (Manual Input - Replacing Markup) -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Harga Jual</label>
+                        <label class="block text-sm font-medium text-foreground mb-1">Harga Jual</label>
                         <div class="relative">
-                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">Rp</span>
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">Rp</span>
                             <input
                                 v-model="form.selling_price"
                                 type="number"
                                 min="0"
-                                class="w-full border rounded-lg pl-10 pr-4 py-2"
+                                class="w-full border border-input bg-background text-foreground rounded-xl pl-12 pr-4 py-2.5 focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                                 placeholder="Masukkan harga jual"
                                 required
                             />
                         </div>
-                        <p class="text-xs text-gray-500 mt-1">Tentukan harga jual secara manual</p>
+                        <p class="text-xs text-muted-foreground mt-1">Tentukan harga jual secara manual</p>
                     </div>
 
                     <!-- Profit Preview -->
-                    <div v-if="form.base_price && form.selling_price" class="bg-gray-50 p-3 rounded-lg">
+                    <div v-if="form.base_price && form.selling_price" class="bg-muted/50 p-4 rounded-xl border border-border">
                         <div class="flex justify-between text-sm">
-                            <span class="text-gray-600">Profit per item:</span>
+                            <span class="text-muted-foreground">Profit per item:</span>
                             <span 
-                                :class="(form.selling_price - form.base_price) >= 0 ? 'text-green-600 font-medium' : 'text-red-600 font-medium'"
+                                :class="(form.selling_price - form.base_price) >= 0 ? 'text-primary font-semibold' : 'text-destructive font-semibold'"
                             >
                                 {{ formatMoney(form.selling_price - form.base_price) }}
                             </span>
                         </div>
                     </div>
 
-                    <button
-                        type="submit"
-                        :disabled="form.processing || !form.partner_id"
-                        class="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
-                    >
-                        {{ form.processing ? 'Menyimpan...' : 'Simpan' }}
-                    </button>
+                    <!-- Action Buttons -->
+                    <div class="flex gap-3 pt-2">
+                        <div class="flex-1">
+                            <ActionButton
+                                type="button"
+                                variant="negative"
+                                full-width
+                                @click="showAddModal = false"
+                            >
+                                Batal
+                            </ActionButton>
+                        </div>
+                        <div class="flex-1">
+                            <ActionButton
+                                type="submit"
+                                full-width
+                                :loading="form.processing"
+                                :disabled="form.processing || !form.partner_id"
+                            >
+                                {{ form.processing ? 'Menyimpan...' : 'Simpan' }}
+                            </ActionButton>
+                        </div>
+                    </div>
                 </form>
             </div>
         </div>
