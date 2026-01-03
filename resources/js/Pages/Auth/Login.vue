@@ -1,116 +1,154 @@
 <script setup>
-import Checkbox from '@/Components/Checkbox.vue';
-import GuestLayout from '@/Layouts/GuestLayout.vue';
-import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
-import TextInput from '@/Components/TextInput.vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import GuestLayout from '@/Layouts/GuestLayout.vue'
+import { Button, Input, Label, Card, CardHeader, CardTitle, CardDescription, CardContent, Sonner } from '@/Components/ui'
+import { Head, Link, useForm } from '@inertiajs/vue3'
+import { ref, computed } from 'vue'
+import { Eye, EyeOff, LogIn, Mail, Lock } from 'lucide-vue-next'
 
 defineProps({
-    canResetPassword: {
-        type: Boolean,
-    },
-    status: {
-        type: String,
-    },
-});
+  canResetPassword: Boolean,
+  status: String,
+})
 
 const form = useForm({
-    email: '',
-    password: '',
-    remember: false,
-});
+  email: '',
+  password: '',
+  remember: false,
+})
 
-const showPassword = ref(false);
+const showPassword = ref(false)
 
 const submit = () => {
-    form.post(route('login'), {
-        onFinish: () => form.reset('password'),
-    });
-};
+  form.post(route('login'), {
+    onFinish: () => form.reset('password'),
+  })
+}
 </script>
 
 <template>
-    <GuestLayout>
-        <Head title="Log in" />
+  <GuestLayout>
+    <Head title="Log in" />
+    <Sonner />
 
-        <div v-if="status" class="mb-4 text-sm font-medium text-green-600">
+    <!-- Animated Background -->
+    <div class="fixed inset-0 -z-10 overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <!-- Floating Shapes -->
+      <div class="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/20 rounded-full blur-3xl animate-float" />
+      <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-float" style="animation-delay: 1.5s" />
+      <div class="absolute top-1/2 left-1/2 w-48 h-48 bg-primary/15 rounded-full blur-2xl animate-float" style="animation-delay: 0.75s" />
+
+      <!-- Grid Pattern Overlay -->
+      <div class="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:50px_50px]" />
+    </div>
+
+    <!-- Login Card -->
+    <div class="min-h-screen flex items-center justify-center p-4">
+      <Card class="w-full max-w-md glass border-white/10 animate-fade-in">
+        <CardHeader class="text-center">
+          <div class="mx-auto w-16 h-16 bg-gradient-to-br from-primary to-primary/70 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
+            <LogIn class="w-8 h-8 text-primary-foreground" />
+          </div>
+          <CardTitle class="text-2xl text-white">Welcome Back</CardTitle>
+          <CardDescription class="text-slate-400">
+            Sign in to your Posita account
+          </CardDescription>
+        </CardHeader>
+
+        <CardContent>
+          <div v-if="status" class="mb-4 text-sm font-medium text-emerald-400 bg-emerald-500/10 rounded-lg p-3">
             {{ status }}
-        </div>
+          </div>
 
-        <form @submit.prevent="submit">
-            <div>
-                <InputLabel for="email" value="Email" />
-
-                <TextInput
-                    id="email"
-                    type="email"
-                    class="mt-1 block w-full"
-                    v-model="form.email"
-                    required
-                    autofocus
-                    autocomplete="username"
+          <form @submit.prevent="submit" class="space-y-5">
+            <!-- Email -->
+            <div class="space-y-2">
+              <Label for="email" :error="form.errors.email" class="text-slate-300">
+                Email
+              </Label>
+              <div class="relative">
+                <Mail class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <Input
+                  id="email"
+                  type="email"
+                  v-model="form.email"
+                  :error="!!form.errors.email"
+                  class="pl-10 bg-slate-800/50 border-slate-600 text-slate-100 placeholder:text-slate-500 focus:bg-slate-800/70 focus:border-primary"
+                  placeholder="name@example.com"
+                  required
+                  autofocus
+                  autocomplete="username"
                 />
-
-                <InputError class="mt-2" :message="form.errors.email" />
+              </div>
+              <p v-if="form.errors.email" class="text-sm text-destructive">
+                {{ form.errors.email }}
+              </p>
             </div>
 
-            <div class="mt-4">
-                <InputLabel for="password" value="Password" />
-
-                <div class="relative">
-                    <TextInput
-                        id="password"
-                        :type="showPassword ? 'text' : 'password'"
-                        class="mt-1 block w-full pr-10"
-                        v-model="form.password"
-                        required
-                        autocomplete="current-password"
-                    />
-                    <button
-                        type="button"
-                        @click="showPassword = !showPassword"
-                        class="absolute inset-y-0 right-0 flex items-center pr-3 mt-1 text-gray-500 hover:text-gray-700"
-                    >
-                        <svg v-if="!showPassword" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                        <svg v-else class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                        </svg>
-                    </button>
-                </div>
-
-                <InputError class="mt-2" :message="form.errors.password" />
-            </div>
-
-            <div class="mt-4 block">
-                <label class="flex items-center cursor-pointer">
-                    <Checkbox name="remember" v-model:checked="form.remember" />
-                    <span class="ms-2 text-sm text-gray-600">Remember me</span>
-                </label>
-            </div>
-
-            <div class="mt-4 flex items-center justify-end">
-                <Link
-                    v-if="canResetPassword"
-                    :href="route('password.request')"
-                    class="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            <!-- Password -->
+            <div class="space-y-2">
+              <Label for="password" :error="form.errors.password" class="text-slate-300">
+                Password
+              </Label>
+              <div class="relative">
+                <Lock class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <Input
+                  id="password"
+                  :type="showPassword ? 'text' : 'password'"
+                  v-model="form.password"
+                  :error="!!form.errors.password"
+                  class="pl-10 pr-10 bg-slate-800/50 border-slate-600 text-slate-100 placeholder:text-slate-500 focus:bg-slate-800/70 focus:border-primary"
+                  placeholder="••••••••"
+                  required
+                  autocomplete="current-password"
+                />
+                <button
+                  type="button"
+                  @click="showPassword = !showPassword"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors"
                 >
-                    Forgot your password?
-                </Link>
-
-                <PrimaryButton
-                    class="ms-4"
-                    :class="{ 'opacity-25': form.processing }"
-                    :disabled="form.processing"
-                >
-                    Log in
-                </PrimaryButton>
+                  <EyeOff v-if="showPassword" class="w-5 h-5" />
+                  <Eye v-else class="w-5 h-5" />
+                </button>
+              </div>
+              <p v-if="form.errors.password" class="text-sm text-destructive">
+                {{ form.errors.password }}
+              </p>
             </div>
-        </form>
-    </GuestLayout>
+
+            <!-- Remember Me -->
+            <div class="flex items-center justify-between">
+              <label class="flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  v-model="form.remember"
+                  class="rounded border-white/20 bg-white/5 text-primary focus:ring-primary focus:ring-offset-0"
+                />
+                <span class="ml-2 text-sm text-slate-400">Remember me</span>
+              </label>
+
+              <Link
+                v-if="canResetPassword"
+                :href="route('password.request')"
+                class="text-sm text-primary hover:text-primary/80 transition-colors"
+              >
+                Forgot password?
+              </Link>
+            </div>
+
+            <!-- Submit -->
+            <Button
+              type="submit"
+              :loading="form.processing"
+              :disabled="form.processing"
+              class="w-full"
+              size="lg"
+            >
+              <LogIn v-if="!form.processing" class="w-5 h-5 mr-2" />
+              {{ form.processing ? 'Signing in...' : 'Sign in' }}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  </GuestLayout>
 </template>
