@@ -1,8 +1,11 @@
 <script setup>
 import GuestLayout from '@/Layouts/GuestLayout.vue'
-import { Button, Input, Label, Card, CardHeader, CardTitle, CardDescription, CardContent, Sonner } from '@/Components/ui'
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, Sonner } from '@/Components/ui'
+import ActionButton from '@/Components/ActionButton.vue'
+import TextInput from '@/Components/TextInput.vue'
+import InputLabel from '@/Components/InputLabel.vue'
 import { Head, Link, useForm } from '@inertiajs/vue3'
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { Eye, EyeOff, LogIn, Mail, Lock } from 'lucide-vue-next'
 
 defineProps({
@@ -30,27 +33,29 @@ const submit = () => {
     <Head title="Log in" />
     <Sonner />
 
-    <!-- Animated Background -->
-    <div class="fixed inset-0 -z-10 overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <!-- Animated Background with Orange Gradient -->
+    <!-- Animated Background with Mixed Gradient -->
+    <div class="fixed inset-0 -z-10 overflow-hidden bg-gradient-to-br from-emerald-100 via-white to-orange-100">
       <!-- Floating Shapes -->
-      <div class="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/20 rounded-full blur-3xl animate-float" />
-      <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-float" style="animation-delay: 1.5s" />
-      <div class="absolute top-1/2 left-1/2 w-48 h-48 bg-primary/15 rounded-full blur-2xl animate-float" style="animation-delay: 0.75s" />
+      <div class="absolute top-1/4 left-1/4 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl animate-float" />
+      <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl animate-float" style="animation-delay: 1.5s" />
+      <div class="absolute top-1/2 left-1/2 w-48 h-48 bg-emerald-400/10 rounded-full blur-2xl animate-float" style="animation-delay: 0.75s" />
 
-      <!-- Grid Pattern Overlay -->
-      <div class="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:50px_50px]" />
+      <!-- Dot Pattern Overlay -->
+      <div class="absolute inset-0 bg-pattern-dots opacity-50" />
     </div>
 
     <!-- Login Card -->
     <div class="min-h-screen flex items-center justify-center p-4">
       <Card class="w-full max-w-md glass border-white/10 animate-fade-in">
         <CardHeader class="text-center">
-          <div class="mx-auto w-16 h-16 bg-gradient-to-br from-primary to-primary/70 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
-            <LogIn class="w-8 h-8 text-primary-foreground" />
+          <!-- Logo Icon with Green gradient -->
+          <div class="mx-auto w-16 h-16 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg shadow-emerald-500/20">
+              <LogIn class="w-5 h-5 text-white" />
           </div>
-          <CardTitle class="text-2xl text-white">Welcome Back</CardTitle>
-          <CardDescription class="text-slate-400">
-            Sign in to your Posita account
+          <CardTitle class="text-2xl text-slate-800">Selamat Datang</CardTitle>
+          <CardDescription class="text-slate-500">
+            Masuk ke akun Posita Anda
           </CardDescription>
         </CardHeader>
 
@@ -62,41 +67,39 @@ const submit = () => {
           <form @submit.prevent="submit" class="space-y-5">
             <!-- Email -->
             <div class="space-y-2">
-              <Label for="email" :error="form.errors.email" class="text-slate-300">
-                Email
-              </Label>
+              <InputLabel for="email" class="text-slate-700">Email</InputLabel>
               <div class="relative">
-                <Mail class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <Input
+                <Mail class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 z-10" />
+                <TextInput
                   id="email"
                   type="email"
                   v-model="form.email"
+                  variant="auth"
                   :error="!!form.errors.email"
-                  class="pl-10 bg-slate-800/50 border-slate-600 text-slate-100 placeholder:text-slate-500 focus:bg-slate-800/70 focus:border-primary"
-                  placeholder="name@example.com"
+                  class="pl-10 py-3 bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500"
+                  placeholder="nama@email.com"
                   required
                   autofocus
                   autocomplete="username"
                 />
               </div>
-              <p v-if="form.errors.email" class="text-sm text-destructive">
+              <p v-if="form.errors.email" class="text-sm text-red-400">
                 {{ form.errors.email }}
               </p>
             </div>
 
             <!-- Password -->
             <div class="space-y-2">
-              <Label for="password" :error="form.errors.password" class="text-slate-300">
-                Password
-              </Label>
+              <InputLabel for="password" class="text-slate-700">Password</InputLabel>
               <div class="relative">
-                <Lock class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <Input
+                <Lock class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 z-10" />
+                <TextInput
                   id="password"
                   :type="showPassword ? 'text' : 'password'"
                   v-model="form.password"
+                  variant="auth"
                   :error="!!form.errors.password"
-                  class="pl-10 pr-10 bg-slate-800/50 border-slate-600 text-slate-100 placeholder:text-slate-500 focus:bg-slate-800/70 focus:border-primary"
+                  class="pl-10 pr-10 py-3 bg-white border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500"
                   placeholder="••••••••"
                   required
                   autocomplete="current-password"
@@ -104,13 +107,13 @@ const submit = () => {
                 <button
                   type="button"
                   @click="showPassword = !showPassword"
-                  class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors z-10"
                 >
                   <EyeOff v-if="showPassword" class="w-5 h-5" />
                   <Eye v-else class="w-5 h-5" />
                 </button>
               </div>
-              <p v-if="form.errors.password" class="text-sm text-destructive">
+              <p v-if="form.errors.password" class="text-sm text-red-400">
                 {{ form.errors.password }}
               </p>
             </div>
@@ -121,31 +124,31 @@ const submit = () => {
                 <input
                   type="checkbox"
                   v-model="form.remember"
-                  class="rounded border-white/20 bg-white/5 text-primary focus:ring-primary focus:ring-offset-0"
+                  class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                 />
-                <span class="ml-2 text-sm text-slate-400">Remember me</span>
+                <span class="ml-2 text-sm text-slate-600">Ingat saya</span>
               </label>
 
               <Link
                 v-if="canResetPassword"
                 :href="route('password.request')"
-                class="text-sm text-primary hover:text-primary/80 transition-colors"
+                class="text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
               >
-                Forgot password?
+                Lupa password?
               </Link>
             </div>
 
-            <!-- Submit -->
-            <Button
+            <!-- Submit Button - ActionButton with Green + Orange Icon -->
+            <ActionButton
               type="submit"
+              :icon="LogIn"
               :loading="form.processing"
               :disabled="form.processing"
-              class="w-full"
+              full-width
               size="lg"
             >
-              <LogIn v-if="!form.processing" class="w-5 h-5 mr-2" />
-              {{ form.processing ? 'Signing in...' : 'Sign in' }}
-            </Button>
+              {{ form.processing ? 'Masuk...' : 'Masuk' }}
+            </ActionButton>
           </form>
         </CardContent>
       </Card>
