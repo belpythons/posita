@@ -1,3 +1,8 @@
+<!--
+  Created/Modified by: Belva Pranama Sriwibowo
+  NIM: 202312066
+  Feature: Core & Admin - Layout utama halaman employee/kasir
+-->
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { Link, usePage } from '@inertiajs/vue3'
@@ -105,23 +110,20 @@ const toggleSidebar = () => {
 </script>
 
 <template>
-  <div :class="[
-    'min-h-screen bg-background pb-24 lg:pb-0 transition-all duration-300 ease-in-out',
-    isSidebarCollapsed ? 'lg:pr-16' : 'lg:pr-60'
-  ]">
+  <div class="h-screen w-full bg-background flex flex-col overflow-hidden transition-all duration-300 ease-in-out">
     <!-- Toast Container -->
     <Sonner />
 
     <!-- Command Palette (CMD+K) -->
     <CommandMenu persona="employee" />
 
-    <!-- Top Navigation Bar -->
-    <header class="sticky top-0 z-40 bg-card shadow-sm border-b border-border">
-      <div class="flex items-center justify-between h-14 px-4 lg:px-6">
+    <!-- Top Navigation Bar (Fixed Height) -->
+    <header class="flex-none z-40 bg-card shadow-sm border-b border-border">
+      <div class="flex items-center justify-between h-16 px-4 lg:px-6">
         <!-- Logo / Brand -->
         <div class="flex items-center space-x-3">
-          <h1 class="text-lg font-bold text-foreground">
-            <span class="text-primary">Posita</span> POS
+          <h1 class="text-xl font-bold tracking-tight text-foreground">
+            <span class="text-gradient-primary uppercase tracking-wider">Posita</span> POS
           </h1>
         </div>
 
@@ -131,10 +133,10 @@ const toggleSidebar = () => {
           <div class="hidden sm:flex items-center space-x-3">
             <div
               :class="[
-                'flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium transition-colors',
+                'flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium transition-colors border',
                 session?.isActive
-                  ? 'bg-emerald-100 text-emerald-700'
-                  : 'bg-muted text-muted-foreground'
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : 'bg-muted text-muted-foreground border-border'
               ]"
             >
               <span
@@ -154,10 +156,7 @@ const toggleSidebar = () => {
           <!-- User Dropdown -->
           <DropdownMenu>
             <template #trigger>
-              <button class="flex items-center space-x-2 p-2 rounded-lg hover:bg-muted transition-colors">
-                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-primary-foreground font-semibold text-sm">
-                  {{ user?.name?.charAt(0)?.toUpperCase() || 'U' }}
-                </div>
+              <button class="flex items-center space-x-2 p-1.5 rounded-lg hover:bg-muted transition-colors border border-transparent hover:border-border">
                 <span class="hidden sm:block text-sm font-medium text-foreground">{{ user?.name }}</span>
                 <ChevronDown class="w-4 h-4 text-muted-foreground" />
               </button>
@@ -185,160 +184,155 @@ const toggleSidebar = () => {
           </DropdownMenu>
         </div>
       </div>
-
-      <!-- Mobile Session Info Bar -->
-      <div class="sm:hidden border-t border-border px-4 py-2 bg-muted/50">
-        <div class="flex items-center justify-between">
-          <div
-            :class="[
-              'flex items-center space-x-2 px-2.5 py-1 rounded-full text-xs font-medium',
-              session?.isActive
-                ? 'bg-emerald-100 text-emerald-700'
-                : 'bg-muted text-muted-foreground'
-            ]"
-          >
-            <span
-              :class="[
-                'w-1.5 h-1.5 rounded-full',
-                session?.isActive ? 'bg-emerald-500 animate-pulse-subtle' : 'bg-muted-foreground'
-              ]"
-            />
-            <span>{{ session?.isActive ? 'Aktif' : 'Tutup' }}</span>
-          </div>
-          <div v-if="session?.openingBalance" class="text-xs text-muted-foreground">
-            Saldo: <span class="font-semibold">{{ formatCurrency(session.openingBalance) }}</span>
-          </div>
-        </div>
-      </div>
     </header>
 
-    <!-- Main Content - Centered with max width -->
-    <main class="p-4 lg:p-6">
-      <div class="mx-auto max-w-7xl">
-        <slot />
-      </div>
-    </main>
-
-    <!-- Desktop Right Sidebar Navigation -->
-    <aside :class="[
-      'hidden lg:fixed lg:inset-y-0 lg:right-0 lg:flex lg:flex-col lg:bg-card lg:border-l lg:border-border transition-all duration-300 ease-in-out',
-      isSidebarCollapsed ? 'lg:w-16' : 'lg:w-56'
-    ]">
-      <!-- Collapse Toggle -->
-      <button
-        @click="toggleSidebar"
-        class="absolute -left-3 top-20 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:bg-primary/90 transition-colors z-50"
-        title="Toggle sidebar"
+    <!-- Main Content Wrapper -->
+    <div class="flex flex-1 overflow-hidden relative flex-row">
+      <!-- Main Content Area -->
+      <main 
+        class="flex-1 overflow-y-auto overflow-x-hidden bg-muted/20 w-full min-w-0" 
       >
-        <PanelRightOpen v-if="isSidebarCollapsed" class="w-3.5 h-3.5" />
-        <PanelRightClose v-else class="w-3.5 h-3.5" />
-      </button>
+        <div class="h-full w-full">
+            <slot />
+        </div>
+      </main>
 
-      <!-- Sidebar Header -->
-      <div class="h-14 flex items-center px-4 border-b border-border">
-        <Transition
-          enter-active-class="transition-opacity duration-200"
-          enter-from-class="opacity-0"
-          enter-to-class="opacity-100"
-          leave-active-class="transition-opacity duration-200"
-          leave-from-class="opacity-100"
-          leave-to-class="opacity-0"
-          mode="out-in"
+      <!-- Desktop Right Sidebar Navigation (Fixed) -->
+      <aside 
+        :class="[
+          'hidden lg:flex flex-col h-full bg-card border-l border-border z-30 transition-all duration-300 ease-in-out relative',
+          isSidebarCollapsed ? 'w-16' : 'w-64'
+        ]"
+      >
+        <!-- Collapse Toggle -->
+        <button
+          @click="toggleSidebar"
+          class="absolute -left-3 top-6 w-6 h-6 rounded-full bg-card border border-border text-foreground flex items-center justify-center shadow-md hover:bg-muted transition-colors z-50 transform hover:scale-105"
+          title="Toggle sidebar"
         >
-          <span v-if="!isSidebarCollapsed" class="text-primary font-bold text-lg">Posita</span>
-          <span v-else class="text-primary font-bold text-lg">Ita</span>
-        </Transition>
-      </div>
+          <PanelRightOpen v-if="isSidebarCollapsed" class="w-3.5 h-3.5" />
+          <PanelRightClose v-else class="w-3.5 h-3.5" />
+        </button>
 
-      <!-- Navigation Links -->
-      <nav class="flex-1 px-2 py-4 space-y-1">
-        <Link
-          v-for="item in navigation"
-          :key="item.name"
-          :href="item.href"
-          :class="[
-            'group flex items-center rounded-lg text-sm font-medium transition-all duration-200',
-            isSidebarCollapsed ? 'justify-center p-2.5' : 'px-3 py-2.5',
-            isActive(item.href)
-              ? 'bg-primary text-primary-foreground shadow-md'
-              : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-          ]"
-          :title="isSidebarCollapsed ? item.name : ''"
-        >
-          <component
-            :is="item.icon"
+        <!-- Sidebar Header / Brand / Space -->
+        <div class="flex-none h-16 flex items-center px-4 border-b border-border bg-card/50 backdrop-blur-sm">
+             <Transition
+                enter-active-class="transition-opacity duration-200"
+                enter-from-class="opacity-0"
+                enter-to-class="opacity-100"
+                leave-active-class="transition-opacity duration-200"
+                leave-from-class="opacity-100"
+                leave-to-class="opacity-0"
+                mode="out-in"
+              >
+                <div v-if="!isSidebarCollapsed" class="flex flex-col">
+                    <span class="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Aplikasi</span>
+                    <span class="font-medium text-foreground">Menu Utama</span>
+                </div>
+                <div v-else class="mx-auto">
+                    <span class="text-xs font-bold text-muted-foreground">MENU</span>
+                </div>
+              </Transition>
+        </div>
+
+        <!-- Navigation Links -->
+        <nav class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-1.5">
+          <Link
+            v-for="item in navigation"
+            :key="item.name"
+            :href="item.href"
             :class="[
-              'w-5 h-5 flex-shrink-0',
-              !isSidebarCollapsed && 'mr-3',
-              isActive(item.href) ? 'text-primary-foreground' : 'text-muted-foreground group-hover:text-foreground'
+              'group flex items-center rounded-xl transition-all duration-200 relative overflow-hidden',
+              isSidebarCollapsed ? 'justify-center p-3' : 'px-4 py-3',
+              isActive(item.href)
+                ? 'bg-primary/10 text-primary font-semibold'
+                : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
             ]"
-          />
-          <Transition
-            enter-active-class="transition-all duration-200"
-            enter-from-class="opacity-0 w-0"
-            enter-to-class="opacity-100 w-auto"
-            leave-active-class="transition-all duration-200"
-            leave-from-class="opacity-100 w-auto"
-            leave-to-class="opacity-0 w-0"
+            :title="isSidebarCollapsed ? item.name : ''"
           >
-            <span v-if="!isSidebarCollapsed" class="whitespace-nowrap overflow-hidden">{{ item.name }}</span>
-          </Transition>
-        </Link>
-      </nav>
+            <!-- Active Indicator Line -->
+            <div v-if="isActive(item.href) && !isSidebarCollapsed" class="absolute left-0 top-1/2 -translate-y-1/2 h-8 w-1 bg-primary rounded-r-full"></div>
 
-      <!-- Quick Actions -->
-      <div class="border-t border-border p-2">
-        <Link
-          v-if="!session?.isActive"
-          href="/pos/open"
-          :class="[
-            'flex items-center justify-center w-full bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium rounded-lg transition-colors shadow-sm',
-            isSidebarCollapsed ? 'p-2.5' : 'px-4 py-2.5'
-          ]"
-          :title="isSidebarCollapsed ? 'Buka Toko' : ''"
-        >
-          <Store class="w-4 h-4" :class="!isSidebarCollapsed && 'mr-2'" />
-          <span v-if="!isSidebarCollapsed">Buka Toko</span>
-        </Link>
-        <Link
-          v-else
-          href="/pos/close"
-          :class="[
-            'flex items-center justify-center w-full bg-destructive hover:bg-destructive/90 text-destructive-foreground text-sm font-medium rounded-lg transition-colors shadow-sm',
-            isSidebarCollapsed ? 'p-2.5' : 'px-4 py-2.5'
-          ]"
-          :title="isSidebarCollapsed ? 'Tutup Toko' : ''"
-        >
-          <Lock class="w-4 h-4" :class="!isSidebarCollapsed && 'mr-2'" />
-          <span v-if="!isSidebarCollapsed">Tutup Toko</span>
-        </Link>
-      </div>
-    </aside>
+            <component
+              :is="item.icon"
+              :class="[
+                'w-5 h-5 flex-shrink-0 transition-colors',
+                !isSidebarCollapsed && 'mr-3',
+                isActive(item.href) ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
+              ]"
+            />
+            <Transition
+              enter-active-class="transition-all duration-200"
+              enter-from-class="opacity-0 w-0 translate-x-[-10px]"
+              enter-to-class="opacity-100 w-auto translate-x-0"
+              leave-active-class="transition-all duration-200"
+              leave-from-class="opacity-100 w-auto"
+              leave-to-class="opacity-0 w-0"
+            >
+              <span v-if="!isSidebarCollapsed" class="whitespace-nowrap">{{ item.name }}</span>
+            </Transition>
+          </Link>
+        </nav>
 
-    <!-- Mobile Bottom Navigation Bar -->
-    <nav class="fixed bottom-0 left-0 right-0 bg-card border-t border-border shadow-nav z-50 lg:hidden pb-safe">
-      <div class="flex justify-around items-stretch h-16">
+        <!-- Quick Actions Footer -->
+        <div class="flex-none p-3 border-t border-border bg-muted/10">
+          <Link
+            v-if="!session?.isActive"
+            href="/pos/open"
+            :class="[
+              'flex items-center justify-center w-full bg-accent hover:bg-accent/90 text-accent-foreground text-sm font-medium rounded-xl transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5',
+              isSidebarCollapsed ? 'p-3' : 'px-4 py-3'
+            ]"
+            :title="isSidebarCollapsed ? 'Buka Toko' : ''"
+          >
+            <Store class="w-5 h-5" :class="!isSidebarCollapsed && 'mr-2'" />
+            <span v-if="!isSidebarCollapsed">Buka Toko</span>
+          </Link>
+          <Link
+            v-else
+            href="/pos/close"
+            :class="[
+              'flex items-center justify-center w-full bg-destructive/10 hover:bg-destructive text-destructive hover:text-destructive-foreground text-sm font-medium rounded-xl transition-all',
+              isSidebarCollapsed ? 'p-3' : 'px-4 py-3'
+            ]"
+            :title="isSidebarCollapsed ? 'Tutup Toko' : ''"
+          >
+            <Lock class="w-5 h-5" :class="!isSidebarCollapsed && 'mr-2'" />
+            <span v-if="!isSidebarCollapsed">Tutup Toko</span>
+          </Link>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Mobile Bottom Navigation Bar (Visible only on mobile) -->
+    <nav class="flex-none bg-card border-t border-border shadow-nav z-50 lg:hidden pb-safe">
+      <div class="flex justify-around items-center h-16">
         <Link
           v-for="item in navigation"
           :key="item.name"
           :href="item.href"
           :class="[
-            'flex flex-col items-center justify-center flex-1 py-2 transition-all duration-200',
+            'flex flex-col items-center justify-center flex-1 py-1 transition-all duration-200 h-full',
             isActive(item.href)
-              ? 'text-primary bg-primary/10'
-              : 'text-muted-foreground hover:text-foreground active:bg-muted'
+              ? 'text-primary'
+              : 'text-muted-foreground hover:text-foreground active:bg-muted/20'
           ]"
         >
-          <component
-            :is="item.icon"
-            :class="[
-              'w-5 h-5 transition-transform duration-200',
-              isActive(item.href) ? 'scale-110' : ''
-            ]"
-          />
+          <div :class="[
+            'p-1.5 rounded-full transition-all',
+             isActive(item.href) ? 'bg-primary/10' : 'bg-transparent'
+          ]">
+              <component
+                :is="item.icon"
+                :class="[
+                  'w-5 h-5 transition-transform duration-200',
+                  isActive(item.href) ? 'scale-110' : ''
+                ]"
+              />
+          </div>
           <span
             :class="[
-              'text-[10px] mt-1 font-medium transition-all duration-200',
+              'text-[10px] mt-0.5 font-medium transition-all duration-200',
               isActive(item.href) ? 'text-primary' : 'text-muted-foreground'
             ]"
           >

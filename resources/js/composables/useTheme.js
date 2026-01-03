@@ -5,18 +5,24 @@ const currentTheme = ref(localStorage.getItem('theme') || 'light')
 export function useTheme() {
     const initTheme = () => {
         const html = document.documentElement
+
+        // Explicitly default to 'light' if nothing is in localStorage
         const savedTheme = localStorage.getItem('theme') || 'light'
 
         currentTheme.value = savedTheme
 
+        // Only add 'dark' class if theme is exactly 'dark'
+        // This ensures 'light' allows the default light styles to apply
         if (savedTheme === 'dark') {
             html.classList.add('dark')
         } else {
             html.classList.remove('dark')
         }
 
-        // Remove legacy overrides
-        html.classList.remove('theme-neutral')
+        // Always ensure localStorage has a value
+        if (!localStorage.getItem('theme')) {
+            localStorage.setItem('theme', 'light')
+        }
     }
 
     const toggleTheme = () => {

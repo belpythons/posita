@@ -13,27 +13,28 @@
     --radius: 0.5rem;
 
     /* ----------------------------------------
-       UNIFIED THEME - Green Primary, Orange Accent
-       Light Mode with Emerald branding
+       LIGHT THEME (DEFAULT)
+       Primary: Green (#10b981), Accent: Orange (#f97316)
+       Bg: Emerald Tint Very Light (#f0fdf4)
        ---------------------------------------- */
 
     /* Core */
-    --background: 151 81% 96%;
-    /* emerald-50 #f0fdf4 */
+    --background: 145 60% 98%;
+    /* #f0fdf4 (emerald-50 tint) */
     --foreground: 222 47% 11%;
     /* slate-900 */
 
-    /* Primary: Emerald Green */
-    --primary: 161 94% 30%;
-    /* emerald-600 #059669 */
+    /* Primary: Emerald Green (Solid) */
+    --primary: 158 64% 52%;
+    /* emerald-500 #10b981 */
     --primary-foreground: 0 0% 100%;
 
     /* Secondary: Light Gray */
     --secondary: 210 40% 96%;
-    /* slate-200 #e2e8f0 */
+    /* slate-200 */
     --secondary-foreground: 222 47% 11%;
 
-    /* Accent: Orange */
+    /* Accent: Orange (Vibrant) */
     --accent: 25 95% 53%;
     /* orange-500 #f97316 */
     --accent-foreground: 0 0% 100%;
@@ -43,7 +44,8 @@
     --muted-foreground: 215 16% 47%;
 
     /* Cards & Surfaces */
-    --card: 0 0% 100%;
+    --card: 0 0% 99%;
+    /* Very light gray/white */
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
@@ -51,59 +53,61 @@
     /* Sidebar */
     --sidebar: 0 0% 100%;
     --sidebar-foreground: 222 47% 11%;
-    --sidebar-hover: 152 30% 95%;
-    /* emerald tint */
+    --sidebar-hover: 150 50% 96%;
+    /* green tint hover */
 
     /* Borders & Inputs */
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 161 94% 30%;
+    --ring: 158 64% 52%;
     /* Emerald ring */
 
-    /* Destructive - Orange (no red) */
-    --destructive: 25 95% 53%;
-    /* orange-500 */
+    /* Destructive */
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
   }
 
-  /* Dark Theme (Old Admin Theme - Violet) */
+  /* ----------------------------------------
+     DARK THEME
+     Primary: Violet (#7c3aed), Accent: Green (#10b981)
+     Bg: Dimmed Slate (#0f172a)
+     ---------------------------------------- */
   .dark {
-    --background: 222 47% 11%;
-    /* slate-900 */
+    --background: 265 45% 10%;
+    /* Dark violet background */
     --foreground: 210 40% 98%;
-    /* slate-50 */
 
-    --card: 222 47% 11%;
+    /* Card: Darker Violet Surface */
+    --card: 265 35% 15%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222 47% 11%;
+    --popover: 265 35% 15%;
     --popover-foreground: 210 40% 98%;
 
+    /* Primary: Bright Violet */
     --primary: 262 83% 58%;
-    /* violet-600 */
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 217 33% 17%;
-    /* slate-800 */
+    --secondary: 265 30% 20%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 217 33% 17%;
+    --muted: 265 30% 20%;
     --muted-foreground: 215 20% 65%;
 
-    --accent: 262 83% 58%;
-    /* violet-600 */
-    --accent-foreground: 210 40% 98%;
+    /* Accent: Emerald Green (unchanged for contrast) */
+    --accent: 158 64% 52%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 224 76% 48%;
+    --border: 265 30% 20%;
+    --input: 265 30% 20%;
+    --ring: 262 83% 58%;
 
-    --sidebar: 222 47% 11%;
+    --sidebar: 265 45% 10%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-hover: 217 33% 17%;
+    --sidebar-hover: 262 83% 58%;
   }
 
   /* Base Styles */
@@ -133,14 +137,17 @@
   /* ----------------------------------------
      BUTTON VARIANTS
      ---------------------------------------- */
+  /* Rebrand: Main action buttons (primary) use Accent (Green) */
   .btn-primary {
-    @apply bg-primary text-primary-foreground hover:bg-primary/90 transition-colors;
+    @apply bg-accent text-accent-foreground hover:bg-accent/90 transition-colors;
   }
 
   .btn-secondary {
     @apply bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors;
   }
 
+  /* Accent button can stay as Accent (same as primary now) or check if user meant something else.
+     But since primary became accent, btn-accent is redundant or same. */
   .btn-accent {
     @apply bg-accent text-accent-foreground hover:bg-accent/90 transition-colors;
   }
@@ -359,9 +366,13 @@
     animation: slide-up 0.4s ease-out forwards;
   }
 
-  /* Text gradient */
+  /* Text gradient (Orange) */
+  .text-gradient-primary {
+    @apply bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent;
+  }
+
   .text-gradient {
-    @apply bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent;
+    @apply text-gradient-primary;
   }
 
   /* Glow effect */

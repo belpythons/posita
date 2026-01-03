@@ -7,10 +7,12 @@
         "dev": "vite"
     },
     "dependencies": {
+        "@headlessui/vue": "^1.7.23",
         "@tanstack/vue-table": "^8.21.3",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "lucide-vue-next": "^0.562.0",
+        "pinia": "^2.0.0",
         "radix-vue": "^1.9.17",
         "tailwind-merge": "^3.4.0",
         "tailwindcss-animate": "^1.0.7",
