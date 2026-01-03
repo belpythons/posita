@@ -1,5 +1,9 @@
 <?php
-//Nurita Wahyuni | 202312061
+/**
+ * Created/Modified by: Nurita Wahyuni
+ * NIM: 202312061
+ * Feature: Open Shop - Controller untuk manajemen sesi toko
+ */
 namespace App\Http\Controllers\Pos;
 
 use App\Http\Controllers\Controller;

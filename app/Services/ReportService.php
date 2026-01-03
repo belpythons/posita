@@ -1,5 +1,9 @@
 <?php
-
+/**
+ * Created/Modified by: Muhammad Ammar Alfarabi
+ * NIM: 202312056
+ * Feature: Close Shop - Service untuk generate laporan PDF
+ */
 namespace App\Services;
 
 use App\Models\ShopSession;

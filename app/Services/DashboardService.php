@@ -18,12 +18,12 @@ class DashboardService
     private function getDateFormat(string $column, string $format): string
     {
         $driver = DB::connection()->getDriverName();
-        
+
         if ($driver === 'sqlite') {
             // SQLite uses strftime
             return "strftime('{$format}', {$column})";
         }
-        
+
         // MySQL uses DATE_FORMAT
         return "DATE_FORMAT({$column}, '{$format}')";
     }
@@ -203,17 +203,50 @@ class DashboardService
      * Get box order revenue aggregated by date using pure SQL.
      * OPTIMIZED: Single query.
      */
+    /**
+     * Get box order revenue using hybrid approach (Daily Stats + Realtime).
+     * OPTIMIZED: Uses daily_stats for history, real-time for today.
+     */
     private function getBoxOrderRevenueAggregated(Carbon $startDate, Carbon $endDate, string $groupBy = 'date'): array
     {
-        $format = $groupBy === 'date' ? '%Y-%m-%d' : '%Y-%m';
-        $dateFormatExpr = $this->getDateFormat('created_at', $format);
+        $today = Carbon::today();
+        $results = [];
 
-        return BoxOrder::whereBetween('created_at', [$startDate, $endDate])
-            ->whereIn('status', ['paid', 'completed'])
-            ->selectRaw("{$dateFormatExpr} as period, SUM(total_price) as total")
-            ->groupBy('period')
-            ->pluck('total', 'period')
-            ->toArray();
+        // 1. Fetch Historical Data from daily_stats
+        // We ensure we only fetch up to yesterday (or endDate if it's in the past)
+        $historyEndDate = $endDate->lt($today) ? $endDate : Carbon::yesterday();
+
+        if ($startDate->lte($historyEndDate)) {
+            $query = DB::table('daily_stats')
+                ->whereBetween('date', [$startDate, $historyEndDate]);
+
+            if ($groupBy === 'date') {
+                $results = $query->pluck('total_revenue', 'date')->toArray();
+            } else {
+                // Group by Month or Year based on formatting
+                $format = ($groupBy === 'month') ? '%Y-%m' : '%Y-%m-%d';
+                $dateFormatExpr = $this->getDateFormat('date', $format);
+
+                $results = $query->selectRaw("{$dateFormatExpr} as period, SUM(total_revenue) as total")
+                    ->groupBy('period')
+                    ->pluck('total', 'period')
+                    ->toArray();
+            }
+        }
+
+        // 2. Fetch Today's Data Real-time (if range includes today)
+        if ($endDate->gte($today) && $startDate->lte($today)) {
+            $todayRevenue = BoxOrder::whereDate('created_at', $today)
+                ->whereIn('status', ['paid', 'completed'])
+                ->sum('total_price');
+
+            $key = ($groupBy === 'date') ? $today->format('Y-m-d') : $today->format('Y-m');
+
+            // Add or accumulate to results
+            $results[$key] = ($results[$key] ?? 0) + $todayRevenue;
+        }
+
+        return $results;
     }
 
     /**

@@ -1,5 +1,9 @@
 <?php
-
+/**
+ * Created/Modified by: Belva Pranama Sriwibowo
+ * NIM: 202312066
+ * Feature: Core & Admin - Manajemen partner konsinyasi
+ */
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;

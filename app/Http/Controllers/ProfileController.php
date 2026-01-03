@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
 
+use Illuminate\Support\Facades\Storage;
+
 class ProfileController extends Controller
 {
     /**
@@ -30,6 +32,14 @@ class ProfileController extends Controller
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
         $request->user()->fill($request->validated());
+
+        if ($request->hasFile('photo')) {
+            if ($request->user()->profile_photo_path) {
+                Storage::disk('public')->delete($request->user()->profile_photo_path);
+            }
+            $path = $request->file('photo')->store('profile-photos', 'public');
+            $request->user()->profile_photo_path = $path;
+        }
 
         if ($request->user()->isDirty('email')) {
             $request->user()->email_verified_at = null;

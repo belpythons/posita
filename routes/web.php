@@ -1,5 +1,9 @@
 <?php
-
+/**
+ * Created/Modified by: Belva Pranama Sriwibowo
+ * NIM: 202312066
+ * Feature: Core & Admin - Konfigurasi routing aplikasi
+ */
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\Pos;
@@ -63,7 +67,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 | POS Routes (Role: employee)
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'role:employee'])->prefix('pos')->name('pos.')->group(function () {
+Route::middleware(['auth', 'role:employee,admin'])->prefix('pos')->name('pos.')->group(function () {
     // Shop Session
     Route::get('/open', [Pos\ShopSessionController::class, 'create'])->name('session.create');
     Route::post('/open', [Pos\ShopSessionController::class, 'store'])->name('session.store');
