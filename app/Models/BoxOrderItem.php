@@ -1,5 +1,9 @@
 <?php
-// Rivaldi | 202312050
+/**
+ * Created/Modified by: Rivaldi
+ * NIM: 202312050
+ * Feature: Order Box - Model untuk item dalam order box
+ */
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
