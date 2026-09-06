@@ -3,6 +3,34 @@
 Prompt siap pakai untuk dieksekusi AI coding agent (Claude Code, Cursor,
 Copilot Workspace) atau dipakai manusia sebagai spesifikasi kerja.
 
+---
+
+## 🚀 Mulai dari sini
+
+**Mau langsung mengeksekusi?** Salin blok ini ke sesi AI coding agent:
+
+```
+Baca docs/prompts/EXECUTE.md dan jalankan sebagai instruksi.
+
+Kerjakan work package berikutnya yang belum selesai menurut
+docs/prompts/PROGRESS.md. Ikuti seluruh protokol di EXECUTE.md:
+preflight, loop eksekusi, gerbang kualitas, lalu commit & push.
+
+Jangan mengerjakan lebih dari satu work package dalam sesi ini.
+```
+
+| File | Fungsi |
+|---|---|
+| **[EXECUTE.md](EXECUTE.md)** | **Prompt runner** — protokol eksekusi + 6 prompt siap salin untuk berbagai situasi |
+| **[PROGRESS.md](PROGRESS.md)** | **Papan status** — WP mana yang selesai, sedang berjalan, dan berikutnya |
+| [P00-master-context.md](P00-master-context.md) | Aturan rekayasa yang mengikat setiap PR |
+| P01–P20 | Spesifikasi per work package |
+
+Alurnya: `EXECUTE.md` (cara kerja) → `PROGRESS.md` (kerjakan apa) →
+`P<nn>-*.md` (spesifikasinya).
+
+---
+
 ## Aturan Main
 
 1. **Selalu muat [`P00-master-context.md`](P00-master-context.md) terlebih
@@ -21,6 +49,8 @@ Copilot Workspace) atau dipakai manusia sebagai spesifikasi kerja.
 
 | # | Prompt | Fase | WP | Effort |
 |---|---|---|---|---|
+| — | [**EXECUTE**](EXECUTE.md) | — | — | Protokol eksekusi |
+| — | [**PROGRESS**](PROGRESS.md) | — | — | Papan status |
 | P00 | [Master Context](P00-master-context.md) | — | — | Baca dulu |
 | P01 | [Multi-Tenancy & Outlet](P01-multi-tenancy.md) | F0 | WP0.1 | 1,5 pekan |
 | P02 | [RBAC & Permission](P02-rbac.md) | F0 | WP0.2 | 1 pekan |
