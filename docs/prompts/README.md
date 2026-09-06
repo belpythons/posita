@@ -5,6 +5,9 @@ Copilot Workspace) atau dipakai manusia sebagai spesifikasi kerja.
 
 ## Aturan Main
 
+0. **Mulai sesi dari [`EXECUTE.md`](EXECUTE.md)** — protokol preflight, loop
+   eksekusi, gerbang kualitas, dan commit. WP mana yang dikerjakan berikutnya
+   ditentukan oleh [`PROGRESS.md`](PROGRESS.md).
 1. **Selalu muat [`P00-master-context.md`](P00-master-context.md) terlebih
    dahulu** di setiap sesi baru. Prompt lain mengasumsikan konteks itu sudah
    dibaca.
@@ -21,6 +24,8 @@ Copilot Workspace) atau dipakai manusia sebagai spesifikasi kerja.
 
 | # | Prompt | Fase | WP | Effort |
 |---|---|---|---|---|
+| — | [Protokol Eksekusi](EXECUTE.md) | — | — | Baca dulu |
+| — | [Status Work Package](PROGRESS.md) | — | — | Sumber kebenaran status |
 | P00 | [Master Context](P00-master-context.md) | — | — | Baca dulu |
 | P01 | [Multi-Tenancy & Outlet](P01-multi-tenancy.md) | F0 | WP0.1 | 1,5 pekan |
 | P02 | [RBAC & Permission](P02-rbac.md) | F0 | WP0.2 | 1 pekan |
