@@ -15,7 +15,7 @@ F0 dan F1 adalah blocker.
 
 | # | Temuan | Dampak | Prompt |
 |---|---|---|---|
-| 1 | **Baseline test merah** (3 gagal) + `phpunit.xml` menunjuk `tests/Unit` yang tidak ada | Preflight `EXECUTE.md` mensyaratkan baseline hijau. **Setiap sesi berikutnya akan berhenti di langkah 6 preflight.** | **F0** |
+| 1 | ~~**Baseline test merah** (3 gagal) + `phpunit.xml` menunjuk `tests/Unit` yang tidak ada~~ | ✅ **Selesai 6 Sep 2026** di `fix/test-baseline` — 25 lulus, exit code 0 | ~~F0~~ |
 | 2 | `feat/tenancy` bertumpu pada `docs/execution-protocol` yang sudah **digantikan** — tidak punya P21–P26, `PROGRESS.md`-nya versi 20 WP | Merge urutan salah akan meregresi dokumentasi dari 26 WP kembali ke 20 | **F1** |
 | 3 | PR `feat/tenancy` belum dibuka | Kode P01 belum tereview | **F1** |
 | 4 | 7 penyimpangan P01 belum direview — termasuk `users.is_super_admin` (menyentuh area P02) dan perbaikan otorisasi `bulkUpdate*` (di luar lingkup ketat) | Keputusan desain masuk ke `main` tanpa persetujuan | **F2** |
@@ -24,8 +24,16 @@ F0 dan F1 adalah blocker.
 
 ---
 
-## F0 — Perbaiki Baseline Merah (BLOCKER, kerjakan pertama)
+## F0 — Perbaiki Baseline Merah ✅ SELESAI (6 Sep 2026, branch `fix/test-baseline`)
 
+> **Hasil.** Ketiga kegagalan ternyata **test yang usang, bukan kode yang rusak**:
+> `RegistrationTest` menguji fitur yang controller-nya sudah dihapus di `fe27e64`,
+> dan `AuthenticationTest` memakai ekspektasi redirect `/dashboard` bawaan Breeze
+> padahal aplikasi sengaja redirect per role (`/pos/open` untuk employee).
+> Keduanya ditulis ulang jadi penjaga perilaku yang benar; jumlah test naik 23 → 25.
+> `tests/Unit/.gitkeep` cukup — testsuite kosong tidak membuat exit code non-zero.
+> Rincian di [`PROGRESS.md`](PROGRESS.md) §Baseline Test.
+>
 > **Kenapa ini didahulukan.** `EXECUTE.md` §3 mensyaratkan
 > `php artisan test` hijau sebelum menyentuh kode, dan menginstruksikan
 > agent **berhenti** kalau merah. Baseline saat ini merah. Artinya setiap

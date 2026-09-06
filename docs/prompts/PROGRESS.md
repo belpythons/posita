@@ -30,7 +30,7 @@ Yang ada sekarang: aplikasi konsinyasi / box-order **single-tenant**.
 | **Tidak ada** | `app/Actions`, `app/Policies`, `app/Domain`, `app/Enums`, `app/Support` |
 | Otorisasi | Kolom `users.role` enum `admin\|employee` + `RoleMiddleware` string-match. Nol policy. |
 | Routing | Hanya `routes/web.php` + `auth.php`. **Belum ada `routes/api.php`** (lingkup P10). |
-| Test | 6 file, semuanya bawaan Breeze (auth + profile). **Nol test logika bisnis.** |
+| Test | 6 file, semuanya bawaan Breeze (auth + profile). **Nol test logika bisnis.** Sejak F0 (6 Sep 2026): `php artisan test` **hijau, 25 lulus, exit code 0** — lihat catatan di bawah. |
 | Factory | Hanya `UserFactory`. Nol factory model bisnis. |
 | Dependency | Laravel 12, Inertia 2, Sanctum 4, `spatie/laravel-activitylog`, dompdf, ziggy. Dev: Pest 4, Pint, Breeze. |
 | Tooling lokal | PHP 8.4.12, Composer 2.9.4, npm 11.16, node 24.18 — tersedia. `vendor/` & `node_modules/` **belum di-install**. |
@@ -43,6 +43,24 @@ Titik sentuh yang sudah diketahui untuk P01 (raw query lolos global scope):
 
 Route model binding yang perlu diamankan: 6 route di `routes/web.php`
 (`{session}` ×2, `{consignment}`, `{order}` ×3).
+
+---
+
+## Baseline Test — diperbaiki di F0, 6 Sep 2026
+
+Branch `fix/test-baseline`. `php artisan test` **tanpa flag** sebelumnya keluar
+dengan exit code 2 (abort) dan menyembunyikan 3 kegagalan; sekarang **25 lulus,
+exit code 0**.
+
+| Masalah | Diagnosis | Perbaikan |
+|---|---|---|
+| `php artisan test` abort | `phpunit.xml` menunjuk `tests/Unit` yang tidak ada | Direktori dibuat (`.gitkeep`). Testsuite kosong ternyata **tidak** membuat exit code non-zero, jadi tidak perlu test isian. P03 yang mengisinya. |
+| `RegistrationTest` (2 test) | **Testnya usang.** `fe27e64` menghapus route register **dan** kelas `RegisteredUserController`; registrasi publik memang sengaja dibuang | Ditulis ulang jadi penjaga: route tidak terdaftar, `GET`/`POST /register` → 404, tetap guest, user tidak terbuat |
+| `AuthenticationTest > users can authenticate` | **Testnya usang.** Kode sengaja redirect per role lewat `AuthService::getRedirectPath()`; test masih memakai ekspektasi `/dashboard` bawaan Breeze. Aktual: `/pos/open` | Diganti dua test yang menutup kedua cabang `match`: employee → `/pos/open`, admin → `/admin` |
+
+**Nol bug kode ditemukan** — ketiganya test yang tertinggal di belakang refactor.
+Tidak ada test yang di-skip, di-disable, atau dihapus; jumlah test justru naik 23 → 25.
+Nol perubahan di `app/`, `routes/`, `database/`, `config/`.
 
 ---
 
@@ -139,13 +157,15 @@ Hal yang sudah diketahui hilang atau salah. Setiap baris punya WP penebusnya —
 |---|---|---|
 | PHPStan/larastan belum terpasang, padahal P00 mewajibkan level 6 | tidak ada `phpstan.neon`, tidak ada di `composer.json` | P03 |
 | Tidak ada CI sama sekali | tidak ada direktori `.github/` | P03 |
-| `phpunit.xml` mendeklarasikan testsuite `tests/Unit` yang direktorinya tidak ada | `phpunit.xml` vs `ls tests/` | P03 |
 | Nol test logika bisnis — 7 service tanpa satu pun test | `tests/` hanya berisi bawaan Breeze | P03 |
 | Uang disimpan `decimal(12,2)` (13 kolom), bukan `bigint` + Money VO | seluruh migrasi | P03 |
 | Tidak ada `pint.json` — Pint jalan dengan preset default | root repo | P03 |
 | `enum` level database di 4 tempat: `users.role`, `box_templates.type`, `shop_sessions.status`, `box_orders.status` | migrasi terkait | P02 (role) / P08 (order) / P09 (session) |
 | Migrasi belum pernah diverifikasi di PostgreSQL maupun MySQL | tidak ada server DB di lingkungan ini | P03 |
 | File `retailer` (106 KB, tanpa ekstensi) tercatat di git root, tidak dirujuk config manapun | `git ls-files \| grep -x retailer` | P03 (cleanup) |
+| `resources/js/Pages/Auth/Register.vue` yatim: halaman Vue untuk fitur yang controller-nya (`RegisteredUserController`) sudah dihapus di `fe27e64`; tidak bisa dirender karena route-nya 404 | `git ls-tree` vs `resources/js/Pages/Auth/` | P03 (hapus) |
+| `UserFactory` tidak mengeset `role` maupun `is_active`, jadi model in-memory bernilai `null` sementara DB memakai default kolom. `RoleMiddleware` menolak `!$user->is_active`, sehingga `actingAs(User::factory()->create())` gagal di route ber-middleware `role` dengan pesan membingungkan | `database/factories/UserFactory.php` | P03 |
+| `routes/auth.php` menyisakan baris kosong bekas import `RegisteredUserController` | `routes/auth.php` baris 9-10 | P03 |
 | Belum ada `routes/api.php`; middleware outlet berbasis header `X-Outlet-Id` belum punya grup `api` untuk didaftarkan | `bootstrap/app.php` `withRouting()` tanpa `api:` | P10 |
 | Preset "Resto Lengkap" di P19 menyalakan feature flag `tables` & `kds`, modulnya baru dibangun di P23 | `P19-customization.md` §18.2 vs `P23` | P23 (atau hapus klaim presetnya) |
 | `orders.customer_id` & `customer_credits` dirujuk blueprint sejak M5/M6 tapi entitasnya baru dibuat di P22 | `20-blueprint-produk.md` baris 481, 593 | P22 |
