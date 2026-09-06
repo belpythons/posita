@@ -93,8 +93,11 @@ Tunjukkan check yang sama lulus setelah perbaikan, baru push.
    godaannya.
 2. **Wajib baca `P00-master-context.md` lebih dulu.** Semua prompt `Pxx`
    mengasumsikan isinya sudah dibaca.
-3. **Urutan P01 → P20 mengikat.** Prompt belakangan bergantung pada tabel dan
-   abstraksi yang dibuat prompt sebelumnya. Jangan melompat.
+3. **Urutan di tabel `PROGRESS.md` mengikat — bukan nomor file.** Prompt
+   belakangan bergantung pada tabel dan abstraksi yang dibuat prompt
+   sebelumnya. Jangan melompat. P21–P26 ditulis belakangan untuk menutup
+   lubang cakupan, jadi nomornya **tidak** mencerminkan urutan kerja
+   (mis. P22 dikerjakan di Fase 1, jauh sebelum P18). Lihat bagian 4.
 4. **Kode nyata menang atas prompt.** Kalau prompt bertentangan dengan kode
    yang ada, kode yang benar. Catat ketidaksesuaiannya di Catatan Penyimpangan
    `PROGRESS.md` — jangan paksakan prompt.
@@ -136,12 +139,57 @@ gagal sebelum kamu menyentuh apa pun, laporkan ke user dan tunggu keputusan —
 jangan diam-diam memperbaikinya di dalam PR WP ini.
 
 **Kalau prasyarat belum selesai:** hentikan. Laporkan WP mana yang harus lebih
-dulu. P01–P20 punya ketergantungan nyata — tanpa multi-tenancy di P01, seluruh
+dulu. Ke-26 WP punya ketergantungan nyata — tanpa multi-tenancy di P01, seluruh
 skema sesudahnya salah.
 
 ---
 
-## 4. Loop Eksekusi
+## 4. Urutan Eksekusi
+
+**26 work package.** Kerjakan dari atas ke bawah. Nomor file tidak berurutan
+karena P21–P26 ditambahkan belakangan — **ikuti urutan tabel ini**, dan
+`PROGRESS.md` sebagai sumber kebenarannya.
+
+```
+F0  FONDASI — blocker semua hal lain
+    P01 Multi-Tenancy · P02 RBAC · P03 Money VO, Test, CI, Cleanup
+
+F1  DOMAIN INTI POS
+    P04 Catalog · P05 Inventory · P06 Recipe/HPP · P07 Procurement
+    P08 Sales · P09 Cash & Shift · P22 Customer & Piutang
+                                   └── nomor 22, tapi dikerjakan di sini
+
+F2  API & APLIKASI KASIR
+    P10 API v1 · P11 Aplikasi Kasir Expo
+
+F3  OFFLINE-FIRST                                    → gate RILIS v1.0
+    P12 Offline Sync Engine
+
+F4  PEMBEDA KOMPETITIF                               → gate RILIS v1.5
+    P13 Konsinyasi · P14 WhatsApp · P15 HR & Finance
+    P16 Menu Designer · P17 Variance · P23 Meja/Dine-in/KDS
+
+F5  SKALA & EKOSISTEM                                → gate RILIS v2.0
+    P18 Payment · P19 Kustomisasi · P20 Ekspor & Rilis
+    P24 Aplikasi Staf · P25 Aggregator · P26 Self-Hosted
+    P21 Billing & Subscription
+```
+
+**Satu work package per sesi.** WP besar (P11 ±5 pekan, P12 ±5 pekan) perlu
+dipecah lintas sesi — itu wajar; pakai prompt 1C untuk melanjutkan, dan catat
+titik berhentinya di `PROGRESS.md`.
+
+**Yang tidak boleh dipotong** kalau waktu menipis: P01–P03 (fondasi), P06
+(HPP), P08 (sales), P12 (offline), P13 (konsinyasi), P14 (alert stok), P17
+(variance), P21 (billing — tanpa ini tidak ada cara menagih siapa pun).
+
+**Yang boleh ditunda:** P23 (meja/KDS — kalau ditunda, hapus dulu klaim
+`tables` & `kds` dari preset "Resto Lengkap" di P19), P25 (aggregator),
+P26 (self-hosted).
+
+---
+
+## 5. Loop Eksekusi
 
 1. Buka [`PROGRESS.md`](PROGRESS.md), ambil WP pertama berstatus `⬜ Belum`.
 2. Baca prompt `Pxx-*.md` sampai habis.
@@ -170,16 +218,16 @@ skema sesudahnya salah.
 
 6. Setiap kali mengambil keputusan yang menyimpang dari prompt, catat di
    Catatan Penyimpangan `PROGRESS.md` — **saat itu juga**, bukan di akhir.
-7. Jalankan gerbang kualitas (bagian 5).
+7. Jalankan gerbang kualitas (bagian 6).
 8. Telusuri ACCEPTANCE CRITERIA prompt satu per satu. Yang tidak bisa
    diverifikasi di lingkungan ini ditulis **belum terverifikasi** — bukan
    dicentang.
 9. Tandai `✅ Selesai` di `PROGRESS.md`, isi kolom PR dan Tanggal.
-10. Commit & push (bagian 6), lalu laporkan (bagian 7).
+10. Commit & push (bagian 7), lalu laporkan (bagian 8).
 
 ---
 
-## 5. Gerbang Kualitas
+## 6. Gerbang Kualitas
 
 | Perintah | Wajib sejak | Status hari ini |
 |---|---|---|
@@ -222,7 +270,7 @@ sengaja berubah. Putuskan mana yang benar dan jelaskan di commit message.
 
 ---
 
-## 6. Commit & Push
+## 7. Commit & Push
 
 - **Conventional commits, bahasa Inggris.** Satu commit logis per langkah.
   ```
@@ -248,7 +296,7 @@ PR dibuat lewat UI GitHub (`gh` tidak selalu tersedia di lingkungan kerja).
 
 ---
 
-## 7. Laporan Akhir Sesi
+## 8. Laporan Akhir Sesi
 
 Jujur. Pekerjaan setengah jadi yang dilaporkan selesai jauh lebih merusak
 daripada pekerjaan yang jujur belum selesai.
@@ -288,7 +336,7 @@ PostgreSQL/MySQL ⏭️ dilewati (tidak ada server DB)
 
 ---
 
-## 8. Kapan Berhenti dan Bertanya
+## 9. Kapan Berhenti dan Bertanya
 
 **Berhenti, tanya dulu** kalau:
 
@@ -313,7 +361,7 @@ kosong.
 
 ---
 
-## 9. Aturan Keras
+## 10. Aturan Keras
 
 Lengkapnya di [`P00-master-context.md`](P00-master-context.md) §"Aturan
 Rekayasa". Yang paling sering dilanggar dan paling mahal akibatnya:
@@ -331,7 +379,7 @@ Rekayasa". Yang paling sering dilanggar dan paling mahal akibatnya:
 
 ---
 
-## 10. Anti-Pattern
+## 11. Anti-Pattern
 
 ❌ Mengerjakan lebih dari satu WP dalam satu sesi
 ❌ Menambah fitur di luar ruang lingkup ("sekalian saja")
@@ -347,7 +395,7 @@ Rekayasa". Yang paling sering dilanggar dan paling mahal akibatnya:
 
 ---
 
-## 11. Peta Dokumen
+## 12. Peta Dokumen
 
 | Butuh tahu | Baca |
 |---|---|
