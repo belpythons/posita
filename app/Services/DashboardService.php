@@ -5,8 +5,10 @@ namespace App\Services;
 use App\Models\BoxOrder;
 use App\Models\DailyConsignment;
 use App\Models\ShopSession;
+use App\Support\Tenancy\TenantContext;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -30,8 +32,8 @@ class DashboardService
 
     /**
      * Centralized sales trend method with dynamic date filtering.
-     * 
-     * @param string $range 'daily' | 'weekly' | 'monthly'
+     *
+     * @param  string  $range  'daily' | 'weekly' | 'monthly'
      * @return array Chart data with zero-filled dates
      */
     public function getSalesTrend(string $range = 'daily'): array
@@ -97,8 +99,7 @@ class DashboardService
             $weekEnd = Carbon::now()->subWeeks($i)->endOfWeek();
 
             // Use database aggregation for session revenue (fixes N+1)
-            $sessionAmount = DailyConsignment::query()
-                ->join('shop_sessions', 'daily_consignments.shop_session_id', '=', 'shop_sessions.id')
+            $sessionAmount = $this->consignmentsJoinedToSessions()
                 ->whereBetween('shop_sessions.opened_at', [$weekStart, $weekEnd])
                 ->where('shop_sessions.status', 'closed')
                 ->sum('daily_consignments.subtotal_income');
@@ -112,7 +113,7 @@ class DashboardService
             $data[] = [
                 'label' => "Minggu {$weekNumber}",
                 'full_date' => $weekStart->format('Y-m-d'),
-                'date_range' => $weekStart->format('d M') . ' - ' . $weekEnd->format('d M'),
+                'date_range' => $weekStart->format('d M').' - '.$weekEnd->format('d M'),
                 'revenue' => (float) $sessionAmount + (float) $boxAmount,
                 'session_revenue' => (float) $sessionAmount,
                 'box_revenue' => (float) $boxAmount,
@@ -138,8 +139,7 @@ class DashboardService
 
         // Get session revenue grouped by month using database aggregation
         $dateFormatExpr = $this->getDateFormat('shop_sessions.opened_at', '%Y-%m');
-        $sessionRevenue = DailyConsignment::query()
-            ->join('shop_sessions', 'daily_consignments.shop_session_id', '=', 'shop_sessions.id')
+        $sessionRevenue = $this->consignmentsJoinedToSessions()
             ->whereBetween('shop_sessions.opened_at', [$startDate, $endDate])
             ->where('shop_sessions.status', 'closed')
             ->selectRaw("{$dateFormatExpr} as month, SUM(daily_consignments.subtotal_income) as total")
@@ -189,8 +189,7 @@ class DashboardService
         $format = $groupBy === 'date' ? '%Y-%m-%d' : '%Y-%m';
         $dateFormatExpr = $this->getDateFormat('shop_sessions.opened_at', $format);
 
-        return DailyConsignment::query()
-            ->join('shop_sessions', 'daily_consignments.shop_session_id', '=', 'shop_sessions.id')
+        return $this->consignmentsJoinedToSessions()
             ->whereBetween('shop_sessions.opened_at', [$startDate, $endDate])
             ->where('shop_sessions.status', 'closed')
             ->selectRaw("{$dateFormatExpr} as period, SUM(daily_consignments.subtotal_income) as total")
@@ -217,11 +216,21 @@ class DashboardService
         $historyEndDate = $endDate->lt($today) ? $endDate : Carbon::yesterday();
 
         if ($startDate->lte($historyEndDate)) {
+            // DB::table() bypasses Eloquent, so the tenant global scope never
+            // fires here — the predicate has to be written by hand.
             $query = DB::table('daily_stats')
-                ->whereBetween('date', [$startDate, $historyEndDate]);
+                ->whereBetween('date', [$startDate, $historyEndDate])
+                ->where('tenant_id', app(TenantContext::class)->id());
 
             if ($groupBy === 'date') {
-                $results = $query->pluck('total_revenue', 'date')->toArray();
+                // daily_stats now holds one row per outlet per day, so days must
+                // be summed rather than plucked — plucking would keep whichever
+                // outlet's row came last.
+                $results = $query
+                    ->selectRaw('date, SUM(total_revenue) as total')
+                    ->groupBy('date')
+                    ->pluck('total', 'date')
+                    ->toArray();
             } else {
                 // Group by Month or Year based on formatting
                 $format = ($groupBy === 'month') ? '%Y-%m' : '%Y-%m-%d';
@@ -259,8 +268,7 @@ class DashboardService
         $yesterday = Carbon::yesterday();
 
         // Today's sales using database aggregation
-        $todaySessionSales = DailyConsignment::query()
-            ->join('shop_sessions', 'daily_consignments.shop_session_id', '=', 'shop_sessions.id')
+        $todaySessionSales = $this->consignmentsJoinedToSessions()
             ->whereDate('shop_sessions.opened_at', $today)
             ->sum('daily_consignments.subtotal_income');
 
@@ -269,8 +277,7 @@ class DashboardService
             ->sum('total_price');
 
         // Yesterday's sales using database aggregation
-        $yesterdaySessionSales = DailyConsignment::query()
-            ->join('shop_sessions', 'daily_consignments.shop_session_id', '=', 'shop_sessions.id')
+        $yesterdaySessionSales = $this->consignmentsJoinedToSessions()
             ->whereDate('shop_sessions.opened_at', $yesterday)
             ->sum('daily_consignments.subtotal_income');
 
@@ -298,7 +305,7 @@ class DashboardService
      * Get daily summary for a specific date.
      * Uses eager loading to prevent N+1.
      */
-    public function getDailySummary(string $date = null): array
+    public function getDailySummary(?string $date = null): array
     {
         $date = $date ? Carbon::parse($date) : Carbon::today();
 
@@ -311,9 +318,9 @@ class DashboardService
             ->get();
 
         // Use pre-loaded data for calculations
-        $sessionRevenue = $sessions->sum(fn($s) => $s->consignments->sum('subtotal_income'));
+        $sessionRevenue = $sessions->sum(fn ($s) => $s->consignments->sum('subtotal_income'));
         $sessionProfit = $sessions->sum(function ($s) {
-            return $s->consignments->sum(fn($c) => ($c->selling_price - $c->base_price) * $c->qty_sold);
+            return $s->consignments->sum(fn ($c) => ($c->selling_price - $c->base_price) * $c->qty_sold);
         });
         $boxRevenue = $boxOrders->sum('total_price');
 
@@ -324,7 +331,7 @@ class DashboardService
             'session_revenue' => (float) $sessionRevenue,
             'box_revenue' => (float) $boxRevenue,
             'total_profit' => (float) $sessionProfit + (float) $boxRevenue,
-            'total_items_sold' => $sessions->sum(fn($s) => $s->consignments->sum('qty_sold')),
+            'total_items_sold' => $sessions->sum(fn ($s) => $s->consignments->sum('qty_sold')),
             'sessions' => $sessions,
         ];
     }
@@ -378,8 +385,7 @@ class DashboardService
         $thisMonth = Carbon::now()->startOfMonth();
 
         // Today's profit using aggregation
-        $todaySessionProfit = DailyConsignment::query()
-            ->join('shop_sessions', 'daily_consignments.shop_session_id', '=', 'shop_sessions.id')
+        $todaySessionProfit = $this->consignmentsJoinedToSessions()
             ->whereDate('shop_sessions.opened_at', $today)
             ->where('shop_sessions.status', 'closed')
             ->selectRaw('SUM((daily_consignments.selling_price - daily_consignments.base_price) * daily_consignments.qty_sold) as profit')
@@ -390,8 +396,7 @@ class DashboardService
             ->sum('total_price');
 
         // Month's profit using aggregation
-        $monthSessionProfit = DailyConsignment::query()
-            ->join('shop_sessions', 'daily_consignments.shop_session_id', '=', 'shop_sessions.id')
+        $monthSessionProfit = $this->consignmentsJoinedToSessions()
             ->where('shop_sessions.opened_at', '>=', $thisMonth)
             ->where('shop_sessions.status', 'closed')
             ->selectRaw('SUM((daily_consignments.selling_price - daily_consignments.base_price) * daily_consignments.qty_sold) as profit')
@@ -462,5 +467,19 @@ class DashboardService
     public function getMonthlyRevenue(): array
     {
         return $this->getSalesTrend('monthly')['data'];
+    }
+
+    /**
+     * Consignments joined to their session, filtered to the current tenant.
+     *
+     * The tenant global scope applies to daily_consignments but never to the
+     * joined shop_sessions, so that side is filtered by hand here rather than
+     * at seven separate call sites.
+     */
+    private function consignmentsJoinedToSessions(): Builder
+    {
+        return DailyConsignment::query()
+            ->join('shop_sessions', 'daily_consignments.shop_session_id', '=', 'shop_sessions.id')
+            ->where('shop_sessions.tenant_id', app(TenantContext::class)->id());
     }
 }

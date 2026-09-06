@@ -6,6 +6,7 @@ use App\Models\BoxTemplate;
 use App\Models\Partner;
 use App\Models\ProductTemplate;
 use App\Models\User;
+use App\Support\Tenancy\TenantContext;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
@@ -62,7 +63,7 @@ class AdminDataService
         ];
 
         // Only update password if provided
-        if (!empty($data['password'])) {
+        if (! empty($data['password'])) {
             $updateData['password'] = Hash::make($data['password']);
         }
 
@@ -88,7 +89,7 @@ class AdminDataService
      */
     public function getPartners(?bool $activeOnly = null): Collection
     {
-        $cacheKey = 'partners:' . ($activeOnly === null ? 'all' : ($activeOnly ? 'active' : 'inactive'));
+        $cacheKey = $this->cacheKey('partners:'.($activeOnly === null ? 'all' : ($activeOnly ? 'active' : 'inactive')));
 
         return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($activeOnly) {
             $query = Partner::query();
@@ -142,6 +143,7 @@ class AdminDataService
     {
         $result = $partner->delete();
         $this->clearPartnerCache();
+
         return $result;
     }
 
@@ -150,9 +152,9 @@ class AdminDataService
      */
     private function clearPartnerCache(): void
     {
-        Cache::forget('partners:all');
-        Cache::forget('partners:active');
-        Cache::forget('partners:inactive');
+        Cache::forget($this->cacheKey('partners:all'));
+        Cache::forget($this->cacheKey('partners:active'));
+        Cache::forget($this->cacheKey('partners:inactive'));
     }
 
     // =====================
@@ -164,7 +166,7 @@ class AdminDataService
      */
     public function getProductTemplates(?int $partnerId = null): Collection
     {
-        $cacheKey = 'product_templates:' . ($partnerId ?? 'all');
+        $cacheKey = $this->cacheKey('product_templates:'.($partnerId ?? 'all'));
 
         return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($partnerId) {
             $query = ProductTemplate::with('partner');
@@ -223,9 +225,9 @@ class AdminDataService
      */
     private function clearProductTemplateCache(?int $partnerId = null): void
     {
-        Cache::forget('product_templates:all');
+        Cache::forget($this->cacheKey('product_templates:all'));
         if ($partnerId) {
-            Cache::forget("product_templates:{$partnerId}");
+            Cache::forget($this->cacheKey("product_templates:{$partnerId}"));
         }
     }
 
@@ -238,7 +240,7 @@ class AdminDataService
      */
     public function getBoxTemplates(?string $type = null): Collection
     {
-        $cacheKey = 'box_templates:' . ($type ?? 'all');
+        $cacheKey = $this->cacheKey('box_templates:'.($type ?? 'all'));
 
         return Cache::remember($cacheKey, self::CACHE_TTL, function () use ($type) {
             $query = BoxTemplate::query();
@@ -294,6 +296,7 @@ class AdminDataService
     {
         $result = $template->delete();
         $this->clearBoxTemplateCache();
+
         return $result;
     }
 
@@ -302,8 +305,20 @@ class AdminDataService
      */
     private function clearBoxTemplateCache(): void
     {
-        Cache::forget('box_templates:all');
-        Cache::forget('box_templates:heavy_meal');
-        Cache::forget('box_templates:snack_box');
+        Cache::forget($this->cacheKey('box_templates:all'));
+        Cache::forget($this->cacheKey('box_templates:heavy_meal'));
+        Cache::forget($this->cacheKey('box_templates:snack_box'));
+    }
+
+    /**
+     * Namespace a cache key by tenant.
+     *
+     * Without this the tenant global scope actively makes caching worse: the
+     * inner query is scoped correctly, then its result is stored under a shared
+     * key and served to the next tenant that asks.
+     */
+    private function cacheKey(string $key): string
+    {
+        return 'tenant:'.(app(TenantContext::class)->id() ?? 'none').':'.$key;
     }
 }
