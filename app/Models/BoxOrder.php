@@ -1,18 +1,26 @@
 <?php
+
 /**
  * Created/Modified by: Rivaldi
  * NIM: 202312050
  * Feature: Order Box - Model untuk data order box
  */
+
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToOutlet;
+use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class BoxOrder extends Model
 {
+    use BelongsToOutlet, BelongsToTenant;
+
     protected $fillable = [
+        'tenant_id',
+        'outlet_id',
         'customer_name',
         'box_template_id',
         'quantity',
@@ -89,8 +97,9 @@ class BoxOrder extends Model
      */
     public function getTimeRemainingAttribute(): ?array
     {
-        if (!$this->pickup_datetime)
+        if (! $this->pickup_datetime) {
             return null;
+        }
 
         $now = now();
         $pickup = $this->pickup_datetime;
@@ -108,7 +117,7 @@ class BoxOrder extends Model
             'minutes' => $diff->i,
             'text' => $diff->d > 0
                 ? "{$diff->d} hari {$diff->h} jam"
-                : "{$diff->h} jam {$diff->i} menit"
+                : "{$diff->h} jam {$diff->i} menit",
         ];
     }
 

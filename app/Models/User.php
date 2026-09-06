@@ -2,16 +2,18 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, LogsActivity;
+    use BelongsToTenant, HasFactory, LogsActivity, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -19,10 +21,12 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
+        'tenant_id',
         'name',
         'email',
         'password',
         'role',
+        'is_super_admin',
         'is_active',
         'profile_photo_path',
     ];
@@ -48,6 +52,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'is_super_admin' => 'boolean',
         ];
     }
 
@@ -80,5 +85,13 @@ class User extends Authenticatable
     public function shopSessions(): HasMany
     {
         return $this->hasMany(ShopSession::class);
+    }
+
+    /**
+     * Outlets this user may work in.
+     */
+    public function outlets(): BelongsToMany
+    {
+        return $this->belongsToMany(Outlet::class)->withPivot('is_primary');
     }
 }

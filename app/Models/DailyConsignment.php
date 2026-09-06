@@ -2,16 +2,20 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToOutlet;
+use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class DailyConsignment extends Model
 {
-    use LogsActivity;
+    use BelongsToOutlet, BelongsToTenant, LogsActivity;
 
     protected $fillable = [
+        'tenant_id',
+        'outlet_id',
         'shop_session_id',
         'partner_id',
         'product_name',

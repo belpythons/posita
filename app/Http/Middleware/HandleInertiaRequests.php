@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -13,6 +14,8 @@ class HandleInertiaRequests extends Middleware
      * @var string
      */
     protected $rootView = 'app';
+
+    public function __construct(private readonly TenantContext $context) {}
 
     /**
      * Determine the current asset version.
@@ -33,6 +36,10 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'auth' => [
                 'user' => $request->user(),
+                // Lazily resolved so guest pages pay nothing for it.
+                'outlet' => fn () => $this->context->outletId(),
+                'outlets' => fn () => $request->user()?->outlets()
+                    ->get(['outlets.id', 'outlets.name', 'outlets.code']),
             ],
         ];
     }

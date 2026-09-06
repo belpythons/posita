@@ -1,14 +1,22 @@
 <?php
-//Nurita Wahyuni | 202312061
+
+// Nurita Wahyuni | 202312061
+
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToOutlet;
+use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ShopSession extends Model
 {
+    use BelongsToOutlet, BelongsToTenant;
+
     protected $fillable = [
+        'tenant_id',
+        'outlet_id',
         'user_id',
         'opened_at',
         'closed_at',

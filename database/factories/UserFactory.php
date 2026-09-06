@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -24,12 +25,30 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
+            'tenant_id' => Tenant::factory(),
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
+            // Default to employee, not admin: RoleMiddleware rejects a null
+            // role, and admin would change where post-login redirects land.
+            'role' => 'employee',
+            'is_active' => true,
+            'is_super_admin' => false,
             'remember_token' => Str::random(10),
         ];
+    }
+
+    /**
+     * A platform super admin: belongs to no tenant.
+     */
+    public function superAdmin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'tenant_id' => null,
+            'is_super_admin' => true,
+            'role' => 'admin',
+        ]);
     }
 
     /**

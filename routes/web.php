@@ -1,15 +1,15 @@
 <?php
+
 /**
  * Created/Modified by: Belva Pranama Sriwibowo
  * NIM: 202312066
  * Feature: Core & Admin - Konfigurasi routing aplikasi
  */
-use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin;
+use App\Http\Controllers\OutletSwitchController;
 use App\Http\Controllers\Pos;
-use Illuminate\Foundation\Application;
+use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
 /*
 |--------------------------------------------------------------------------
@@ -30,6 +30,7 @@ Route::middleware('auth')->group(function () {
         if ($user->role === 'admin') {
             return redirect()->route('admin.dashboard');
         }
+
         return redirect()->route('pos.session.create');
     })->name('dashboard');
 
@@ -37,6 +38,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Outlet context for this session
+    Route::post('/outlet/switch', OutletSwitchController::class)->name('outlet.switch');
 });
 
 /*
@@ -90,4 +94,4 @@ Route::middleware(['auth', 'role:employee,admin'])->prefix('pos')->name('pos.')-
     Route::get('/box/{order}/receipt', [Pos\BoxOrderController::class, 'downloadReceipt'])->name('box.receipt');
 });
 
-require __DIR__ . '/auth.php';
+require __DIR__.'/auth.php';

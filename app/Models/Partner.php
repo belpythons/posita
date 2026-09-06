@@ -2,16 +2,18 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Partner extends Model
 {
-    use LogsActivity;
+    use BelongsToTenant, LogsActivity;
 
     protected $fillable = [
+        'tenant_id',
         'name',
         'phone',
         'address',
