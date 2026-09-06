@@ -23,6 +23,7 @@ Jangan mengerjakan lebih dari satu work package dalam sesi ini.
 |---|---|
 | **[EXECUTE.md](EXECUTE.md)** | **Prompt runner** — protokol eksekusi + 6 prompt siap salin untuk berbagai situasi |
 | **[PROGRESS.md](PROGRESS.md)** | **Papan status** — WP mana yang selesai, sedang berjalan, dan berikutnya |
+| **[FOLLOWUP.md](FOLLOWUP.md)** | **Pekerjaan tertunda** — prompt untuk membereskan yang kurang & melanjutkan |
 | [P00-master-context.md](P00-master-context.md) | Aturan rekayasa yang mengikat setiap PR |
 | P01–P20 | Spesifikasi per work package |
 
@@ -54,6 +55,7 @@ Alurnya: `EXECUTE.md` (cara kerja) → `PROGRESS.md` (kerjakan apa) →
 |---|---|---|---|---|
 | — | [**EXECUTE** — Protokol Eksekusi](EXECUTE.md) | — | — | Baca dulu |
 | — | [**PROGRESS** — Status Work Package](PROGRESS.md) | — | — | Sumber kebenaran status |
+| — | [**FOLLOWUP** — Pekerjaan Tertunda](FOLLOWUP.md) | — | — | Yang kurang & lanjutannya |
 | P00 | [Master Context](P00-master-context.md) | — | — | Baca dulu |
 | P01 | [Multi-Tenancy & Outlet](P01-multi-tenancy.md) | F0 | WP0.1 | 1,5 pekan |
 | P02 | [RBAC & Permission](P02-rbac.md) | F0 | WP0.2 | 1 pekan |

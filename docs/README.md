@@ -49,6 +49,7 @@ Copilot).
 |---|---|
 | [prompts/EXECUTE.md](prompts/EXECUTE.md) | **Mulai dari sini** — prompt runner + protokol eksekusi |
 | [prompts/PROGRESS.md](prompts/PROGRESS.md) | Papan status work package |
+| [prompts/FOLLOWUP.md](prompts/FOLLOWUP.md) | Pekerjaan tertunda & prompt lanjutan |
 | [prompts/README.md](prompts/README.md) | Indeks & urutan P01–P20 |
 | [prompts/P00-master-context.md](prompts/P00-master-context.md) | Aturan rekayasa yang mengikat |
 
