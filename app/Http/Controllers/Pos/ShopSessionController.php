@@ -1,9 +1,11 @@
 <?php
+
 /**
  * Created/Modified by: Nurita Wahyuni
  * NIM: 202312061
  * Feature: Open Shop - Controller untuk manajemen sesi toko
  */
+
 namespace App\Http\Controllers\Pos;
 
 use App\Http\Controllers\Controller;
@@ -22,8 +24,7 @@ class ShopSessionController extends Controller
         protected ShopSessionService $shopSessionService,
         protected ConsignmentService $consignmentService,
         protected ReportService $reportService
-    ) {
-    }
+    ) {}
 
     /**
      * Show form to open a new shop session.
@@ -81,7 +82,7 @@ class ShopSessionController extends Controller
         $user = auth()->user();
         $activeSession = $this->shopSessionService->getActiveSession($user);
 
-        if (!$activeSession) {
+        if (! $activeSession) {
             return Inertia::render('Pos/CloseShop', [
                 'hasSession' => false,
                 'currentSession' => null,
@@ -124,14 +125,14 @@ class ShopSessionController extends Controller
             'actual_cash' => 'required|numeric|min:0',
             'notes' => 'nullable|string|max:500',
             'leftovers' => 'required|array',
-            'leftovers.*.id' => 'required|exists:daily_consignments,id',
+            'leftovers.*.id' => ['required', $this->existsInTenant('daily_consignments')],
             'leftovers.*.qty_remaining' => 'required|integer|min:0',
         ]);
 
         $user = auth()->user();
         $activeSession = $this->shopSessionService->getActiveSession($user);
 
-        if (!$activeSession) {
+        if (! $activeSession) {
             return redirect()
                 ->route('pos.session.create')
                 ->withErrors(['error' => 'Tidak ada sesi aktif untuk ditutup.']);
@@ -139,7 +140,7 @@ class ShopSessionController extends Controller
 
         try {
             // First, update all consignment remaining quantities
-            $this->consignmentService->bulkUpdateRemainingQuantities($validated['leftovers']);
+            $this->consignmentService->bulkUpdateRemainingQuantities($activeSession, $validated['leftovers']);
 
             // Then close the session
             $this->shopSessionService->closeSession(

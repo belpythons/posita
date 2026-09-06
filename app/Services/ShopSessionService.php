@@ -1,9 +1,12 @@
 <?php
-//Nurita Wahyuni | 202312061
+
+// Nurita Wahyuni | 202312061
+
 namespace App\Services;
 
 use App\Models\ShopSession;
 use App\Models\User;
+use App\Support\Tenancy\TenantContext;
 use Carbon\Carbon;
 
 class ShopSessionService
@@ -32,8 +35,15 @@ class ShopSessionService
      */
     public function getActiveSession(User $user): ?ShopSession
     {
+        // Scoped to the current outlet as well as the user: with more than one
+        // outlet, "one open session per user" has to mean per outlet, or a user
+        // working a second till can never open it.
         return ShopSession::where('user_id', $user->id)
             ->where('status', 'open')
+            ->when(
+                app(TenantContext::class)->outletId(),
+                fn ($query, $outletId) => $query->where('outlet_id', $outletId)
+            )
             ->with('consignments.partner')
             ->first();
     }
@@ -129,7 +139,7 @@ class ShopSessionService
             number_format((float) ($actualCash ?? 0), 0, ',', '.'),
             number_format((float) abs($discrepancy ?? 0), 0, ',', '.'),
             $discrepancyStatus,
-            $notes ? "\nCatatan: " . $notes : ''
+            $notes ? "\nCatatan: ".$notes : ''
         );
 
         $session->update([

@@ -1,9 +1,11 @@
 <?php
+
 /**
  * Created/Modified by: Belva Pranama Sriwibowo
  * NIM: 202312066
  * Feature: Core & Admin - Manajemen partner konsinyasi
  */
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -20,8 +22,7 @@ class PartnerController extends Controller
 {
     public function __construct(
         protected AdminDataService $adminDataService
-    ) {
-    }
+    ) {}
 
     /**
      * Display a listing of partners.
@@ -67,7 +68,7 @@ class PartnerController extends Controller
                 'is_active' => $validated['is_active'] ?? true,
             ]);
 
-            if (!empty($validated['product_templates'])) {
+            if (! empty($validated['product_templates'])) {
                 foreach ($validated['product_templates'] as $template) {
                     $partner->productTemplates()->create([
                         'name' => $template['name'],
@@ -107,7 +108,7 @@ class PartnerController extends Controller
             'address' => 'nullable|string',
             'is_active' => 'boolean',
             'product_templates' => 'nullable|array',
-            'product_templates.*.id' => 'nullable|exists:product_templates,id',
+            'product_templates.*.id' => ['nullable', $this->existsInTenant('product_templates')],
             'product_templates.*.name' => 'required|string|max:255',
             'product_templates.*.base_price' => 'required|numeric|min:0',
             'product_templates.*.default_selling_price' => 'required|numeric|min:0',
@@ -132,7 +133,7 @@ class PartnerController extends Controller
 
             // Update or create templates
             foreach ($validated['product_templates'] ?? [] as $templateData) {
-                if (!empty($templateData['id'])) {
+                if (! empty($templateData['id'])) {
                     ProductTemplate::where('id', $templateData['id'])
                         ->where('partner_id', $partner->id)
                         ->update([

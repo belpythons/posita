@@ -107,14 +107,18 @@ class ConsignmentService
     }
 
     /**
-     * Bulk update sold quantities.
+     * Bulk update sold quantities for one session.
+     *
+     * The ids come from the request body, so they are constrained to the
+     * caller's own session. Without that predicate any employee could rewrite a
+     * colleague's quantities and income by posting their consignment ids.
      */
-    public function bulkUpdateSoldQuantities(array $items): array
+    public function bulkUpdateSoldQuantities(ShopSession $session, array $items): array
     {
         $results = [];
 
         foreach ($items as $item) {
-            $consignment = DailyConsignment::find($item['id']);
+            $consignment = $session->consignments()->whereKey($item['id'])->first();
             if ($consignment) {
                 $results[] = $this->updateSoldQuantity($consignment, (int) $item['qty_sold']);
             }
@@ -125,13 +129,16 @@ class ConsignmentService
 
     /**
      * Bulk update remaining quantities during close shop.
+     *
+     * Same reasoning as bulkUpdateSoldQuantities: the ids are caller-supplied
+     * and must belong to the session being closed.
      */
-    public function bulkUpdateRemainingQuantities(array $items): array
+    public function bulkUpdateRemainingQuantities(ShopSession $session, array $items): array
     {
         $results = [];
 
         foreach ($items as $item) {
-            $consignment = DailyConsignment::find($item['id']);
+            $consignment = $session->consignments()->whereKey($item['id'])->first();
             if ($consignment) {
                 $results[] = $this->updateRemainingQuantity($consignment, (int) $item['qty_remaining']);
             }

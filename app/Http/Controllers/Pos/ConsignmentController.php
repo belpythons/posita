@@ -18,8 +18,7 @@ class ConsignmentController extends Controller
         protected ConsignmentService $consignmentService,
         protected ShopSessionService $shopSessionService,
         protected AdminDataService $adminDataService
-    ) {
-    }
+    ) {}
 
     /**
      * Display consignment management page.
@@ -59,7 +58,7 @@ class ConsignmentController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'partner_id' => 'required|exists:partners,id',
+            'partner_id' => ['required', $this->existsInTenant('partners')],
             'product_name' => 'required|string|max:255',
             'qty_initial' => 'required|integer|min:1',
             'base_price' => 'required|numeric|min:0',
@@ -69,7 +68,7 @@ class ConsignmentController extends Controller
         $user = auth()->user();
         $activeSession = $this->shopSessionService->getActiveSession($user);
 
-        if (!$activeSession) {
+        if (! $activeSession) {
             return redirect()
                 ->route('pos.session.create')
                 ->withErrors(['error' => 'Buka sesi toko terlebih dahulu.']);
@@ -120,12 +119,20 @@ class ConsignmentController extends Controller
     {
         $validated = $request->validate([
             'items' => 'required|array',
-            'items.*.id' => 'required|exists:daily_consignments,id',
+            'items.*.id' => ['required', $this->existsInTenant('daily_consignments')],
             'items.*.qty_sold' => 'required|integer|min:0',
         ]);
 
+        $activeSession = $this->shopSessionService->getActiveSession(auth()->user());
+
+        if (! $activeSession) {
+            return redirect()
+                ->route('pos.session.create')
+                ->withErrors(['error' => 'Tidak ada sesi aktif.']);
+        }
+
         try {
-            $this->consignmentService->bulkUpdateSoldQuantities($validated['items']);
+            $this->consignmentService->bulkUpdateSoldQuantities($activeSession, $validated['items']);
 
             return redirect()
                 ->back()

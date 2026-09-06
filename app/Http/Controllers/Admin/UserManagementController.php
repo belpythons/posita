@@ -1,9 +1,11 @@
 <?php
+
 /**
  * Created/Modified by: Belva Pranama Sriwibowo
  * NIM: 202312066
  * Feature: Core & Admin - Manajemen user dan role
  */
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -18,8 +20,7 @@ class UserManagementController extends Controller
 {
     public function __construct(
         protected AdminDataService $adminDataService
-    ) {
-    }
+    ) {}
 
     /**
      * Display a listing of users.
@@ -48,6 +49,10 @@ class UserManagementController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            // Deliberately unique across all tenants, not per tenant:
+            // AuthService::login looks a user up by email before any tenant
+            // context exists, so a per-tenant email would make login pick an
+            // arbitrary tenant's account.
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8|confirmed',
             'role' => 'required|in:admin,employee',
@@ -78,7 +83,7 @@ class UserManagementController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->id,
+            'email' => 'required|email|unique:users,email,'.$user->id,
             'password' => 'nullable|string|min:8|confirmed',
             'role' => 'required|in:admin,employee',
             'is_active' => 'boolean',
