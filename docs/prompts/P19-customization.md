@@ -2,6 +2,10 @@
 
 **Fase:** F5 · **WP:** 5.2 · **Effort:** ± 2 pekan · **Prasyarat:** semua modul
 
+> ⚠️ Preset **Resto / Cafe Penuh** menyalakan feature flag `tables` dan `kds`,
+> yang modulnya dibangun di [P23](P23-meja-dinein-kds.md). Kalau P23 belum
+> selesai, **hapus preset itu dari daftar** — jangan menyalakan menu kosong.
+
 ---
 
 ## PERAN

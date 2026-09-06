@@ -1136,7 +1136,7 @@ Lapis 5 — CUSTOM FIELD
 | **Kantin / Koperasi Mitra** | Partner, Sales, Cash, Notification (Recipe mati) | Fokus konsinyasi, banyak mitra, settlement mingguan |
 | **Warung Kopi Sederhana** | Catalog, Sales, Cash (Recipe & Inventory mati) | Paling sederhana, tanpa pajak, tanpa modifier |
 | **Catering / Box** | Preorder, Recipe, Inventory, Finance | Fokus pesanan terjadwal, kalkulasi bahan |
-| **Resto / Cafe Penuh** | Semua | Meja, dine-in, service charge, KDS |
+| **Resto / Cafe Penuh** | Semua | Meja, dine-in, service charge, KDS — modul meja/KDS dibangun di **P23**; jangan aktifkan preset ini sebelum P23 selesai |
 | **Food Truck** | Catalog, Sales, Cash, Inventory | Offline-heavy, satu kasir, tanpa meja |
 | **Custom** | Pilih sendiri | Untuk pengguna mahir |
 
