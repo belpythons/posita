@@ -34,7 +34,13 @@ dengan dukungan penuh untuk model **penjualan mitra (konsinyasi)** dan
 | 40 | [Roadmap Rilis](40-roadmap-rilis.md) | 6 fase, work package, definition of done, KPI, estimasi effort |
 | 50 | [GTM, Pricing & Kepatuhan](50-gtm-pricing-legal.md) | Model harga, positioning, PB1/PBJT, UU PDP, checklist legal |
 
-### C. Prompt Eksekusi (`docs/prompts/`)
+### C. Ringkasan Perubahan
+
+[RINGKASAN-PERUBAHAN.md](RINGKASAN-PERUBAHAN.md) — catatan tertulis atas
+seluruh dokumen yang dihasilkan: riwayat commit, hasil audit cakupan, dampak
+ke roadmap, verifikasi yang dijalankan, dan langkah berikutnya.
+
+### D. Prompt Eksekusi (`docs/prompts/`)
 
 Prompt siap pakai untuk dieksekusi AI coding agent (Claude Code / Cursor /
 Copilot).
