@@ -64,6 +64,7 @@ Alurnya: `EXECUTE.md` (cara kerja) → `PROGRESS.md` (kerjakan apa) →
 | P07 | [Procurement & Restock](P07-procurement.md) | F1 | WP1.4 | 1 pekan |
 | P08 | [Sales Core](P08-sales.md) | F1 | WP1.5 | 2,5 pekan |
 | P09 | [Cash & Shift](P09-cash-shift.md) | F1 | WP1.6 | 1 pekan |
+| P22 | [Customer & Piutang (Kasbon)](P22-customer-piutang.md) | F1 | WP1.7 | 1 pekan |
 | P10 | [API v1 & OpenAPI](P10-api-v1.md) | F2 | WP2.1 | 1,5 pekan |
 | P11 | [Aplikasi Kasir Expo](P11-mobile-pos.md) | F2 | WP2.2–2.6 | 5 pekan |
 | P12 | [Offline Sync Engine](P12-offline-sync.md) | F3 | WP3.1–3.5 | 5 pekan |
@@ -72,9 +73,19 @@ Alurnya: `EXECUTE.md` (cara kerja) → `PROGRESS.md` (kerjakan apa) →
 | P15 | [HR & Finance](P15-hr-finance.md) | F4 | WP4.3–4.4 | 3 pekan |
 | P16 | [Menu Designer & Ekspor](P16-menu-designer.md) | F4 | WP4.5 | 2 pekan |
 | P17 | [Laporan Variance / Kebocoran](P17-variance-report.md) | F4 | WP4.6 | 1 pekan |
+| P23 | [Meja, Dine-in & KDS](P23-meja-dinein-kds.md) | F4 | WP4.7 | 2 pekan |
 | P18 | [Payment Gateway & QRIS](P18-payment.md) | F5 | WP5.1 | 2 pekan |
 | P19 | [Engine Kustomisasi & Preset](P19-customization.md) | F5 | WP5.2 | 2 pekan |
-| P20 | [Ekspor Data & Rilis](P20-release.md) | F5 | WP5.3+ | 1,5 pekan |
+| P20 | [Ekspor Data & Rilis](P20-release.md) | F5 | WP5.3 | 1,5 pekan |
+| P24 | [Aplikasi Staf](P24-aplikasi-staf.md) | F5 | WP5.4 | 1 pekan |
+| P25 | [Integrasi Aggregator](P25-integrasi-aggregator.md) | F5 | WP5.5 | 2,5 pekan |
+| P26 | [Paket Self-Hosted](P26-self-hosted.md) | F5 | WP5.6 | 0,5 pekan |
+| P21 | [Billing & Subscription](P21-billing-subscription.md) | F5 | WP5.7 | 2 pekan |
+
+> **Catatan penomoran:** nomor file mencerminkan urutan penulisan, bukan urutan
+> eksekusi. P21–P26 ditambahkan belakangan untuk menutup lubang cakupan, jadi
+> letaknya di tabel ini mengikuti fase — bukan nomornya. **Urutan tabel ini yang
+> mengikat**, bukan urutan nomor file.
 
 ## Format Setiap Prompt
 

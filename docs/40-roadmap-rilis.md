@@ -15,12 +15,12 @@ dan kriteria kelulusan.
 | Fase | Nama | Effort | Output | Bisa dijual? |
 |---|---|---|---|---|
 | **F0** | Fondasi & Hardening | 4–5 pekan | Basis multi-tenant siap produksi | ❌ |
-| **F1** | Domain Inti POS | 8–10 pekan | POS lengkap (web) | 🟡 Beta tertutup |
+| **F1** | Domain Inti POS | 9–11 pekan | POS lengkap (web) | 🟡 Beta tertutup |
 | **F2** | API & Aplikasi Kasir | 6–7 pekan | Aplikasi Android kasir (online) | 🟡 Beta terbuka |
 | **F3** | Offline-First | 4–5 pekan | Kasir jalan tanpa internet | ✅ **v1.0 GA** |
-| **F4** | Pembeda | 8–10 pekan | Mitra, WA, HR, Finance, Menu Designer | ✅ v1.5 |
-| **F5** | Skala & Ekosistem | 6–8 pekan | Payment, kustomisasi, aggregator | ✅ v2.0 |
-| | **Total** | **36–45 pekan** | | |
+| **F4** | Pembeda | 10–12 pekan | Mitra, WA, HR, Finance, Menu Designer | ✅ v1.5 |
+| **F5** | Skala & Ekosistem | 8–10 pekan | Payment, kustomisasi, aggregator | ✅ v2.0 |
+| | **Total** | **45–54 pekan** | | |
 
 ---
 
@@ -70,6 +70,7 @@ data dan penegakan izin.
 | **WP1.4** | **Procurement**: supplier, restock cepat (4 ketukan), goods receipt, PO opsional, update harga → picu rekalkulasi HPP | 1 pekan |
 | **WP1.5** | **Sales**: keranjang, order + item + modifier, snapshot lengkap, diskon (master + manual + otorisasi), tax group, service charge, pembulatan konfigurabel, void, refund, split payment | 2,5 pekan |
 | **WP1.6** | **Cash & Shift**: evolusi `ShopSession` → `shifts`, cash movement, denominasi, laporan shift, shift lintas tengah malam | 1 pekan |
+| **WP1.7** | **Customer & Piutang**: entitas pelanggan, quick-add di kasir, kasbon + limit, pelunasan, integrasi ke rekonsiliasi kas | 1 pekan |
 
 ### Definition of Done
 - [ ] Bisa menjual "Es Kopi Susu, Large, Less Sugar, Extra Shot" dengan harga
@@ -163,6 +164,7 @@ buruk. Nol kehilangan transaksi.
 | **WP4.4** | **Finance**: kategori & pencatatan pengeluaran, biaya berulang, pendapatan lain, arus kas, laba rugi sederhana, realisasi vs anggaran | 1 pekan |
 | **WP4.5** | **Menu Designer**: model desain, 6 template awal, editor (warna/font/layout/logo/badge/seksi), pratinjau langsung, ekspor 9 format via Browsershot, Menu QR dengan link permanen | 2 pekan |
 | **WP4.6** | **Laporan Variance / Kebocoran**: perhitungan teoretis vs aktual, laporan per bahan, dugaan penyebab, tren, alert | 1 pekan |
+| **WP4.7** | **Meja, Dine-in & KDS**: area & meja, open bill, gabung/pisah bill, kitchen station, layar KDS, printer dapur | 2 pekan |
 
 ### Definition of Done
 - [ ] Alur mitra lengkap: terima titipan → jual → rekonsiliasi → retur →
@@ -189,6 +191,7 @@ buruk. Nol kehilangan transaksi.
 | **WP5.4** | **Aplikasi staf** (atau modul dalam aplikasi kasir): absensi, jadwal, slip gaji, pengajuan izin | 1 pekan |
 | **WP5.5** | **Integrasi aggregator**: GoFood/GrabFood/ShopeeFood — order masuk ke POS, sinkronisasi menu, rekonsiliasi komisi | 2,5 pekan |
 | **WP5.6** | **Paket self-hosted**: Docker image, installer, dokumentasi, lisensi | 0,5 pekan |
+| **WP5.7** | **Billing & Subscription**: paket, tagihan, pembayaran langganan (pakai ulang P18), penegakan batas, dunning, trial | 2 pekan |
 
 ### Gate keluar — **RILIS v2.0**
 
@@ -250,6 +253,9 @@ Jika harus memotong, urutan yang **boleh** ditunda:
 3. ⏸️ WP4.3 Payroll (absensi tetap ada, payroll ditunda)
 4. ⏸️ WP1.4 PO formal (restock cepat tetap ada)
 5. ⏸️ Bundle & price tier lanjutan di WP1.1
+6. ⏸️ WP4.7 Meja/Dine-in/KDS — tidak dibutuhkan coffee shop, target utamanya
+   preset "Resto Lengkap". **Kalau ditunda, hapus dulu klaim `tables` & `kds`
+   dari preset di P19** supaya tidak menjanjikan fitur yang tidak ada.
 
 Yang **tidak boleh** dipotong (ini produknya):
 - Multi-tenancy (F0)
@@ -259,3 +265,4 @@ Yang **tidak boleh** dipotong (ini produknya):
 - Konsinyasi (WP4.1)
 - Notifikasi WA stok (WP4.2)
 - Laporan variance (WP4.6)
+- **Billing & langganan (WP5.7)** — tanpa ini tidak ada cara menagih siapa pun

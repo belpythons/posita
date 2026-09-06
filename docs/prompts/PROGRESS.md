@@ -74,6 +74,7 @@ Legenda: `⬜ Belum` · `🟡 Jalan` · `✅ Selesai` · `⛔ Terblokir` · `⏸
 | WP1.4 | [P07 Procurement & Restock](P07-procurement.md) | P05, P06 | 1 pekan | ⬜ Belum | — | — |
 | WP1.5 | [P08 Sales Core](P08-sales.md) | P04–P07 | 2,5 pekan | ⬜ Belum | — | — |
 | WP1.6 | [P09 Cash & Shift](P09-cash-shift.md) | P08 | 1 pekan | ⬜ Belum | — | — |
+| WP1.7 | [P22 Customer & Piutang (Kasbon)](P22-customer-piutang.md) | P08 | 1 pekan | ⬜ Belum | — | — |
 
 ### Fase 2 — API & Aplikasi Kasir
 
@@ -105,6 +106,7 @@ Legenda: `⬜ Belum` · `🟡 Jalan` · `✅ Selesai` · `⛔ Terblokir` · `⏸
 | WP4.3–4.4 | [P15 HR & Finance](P15-hr-finance.md) | P09, P14 | 3 pekan | ⬜ Belum | — | — |
 | WP4.5 | [P16 Menu Designer & Ekspor](P16-menu-designer.md) | P04 | 2 pekan | ⬜ Belum | — | — |
 | WP4.6 | [P17 Laporan Variance / Kebocoran](P17-variance-report.md) | P05, P06 | 1 pekan | ⬜ Belum | — | — |
+| WP4.7 | [P23 Meja, Dine-in & KDS](P23-meja-dinein-kds.md) | P08, P11 | 2 pekan | ⬜ Belum | — | — |
 
 ### Fase 5 — Skala & Ekosistem
 
@@ -114,9 +116,17 @@ Legenda: `⬜ Belum` · `🟡 Jalan` · `✅ Selesai` · `⛔ Terblokir` · `⏸
 |---|---|---|---|---|---|---|
 | WP5.1 | [P18 Payment Gateway & QRIS](P18-payment.md) | P08, P12 | 2 pekan | ⬜ Belum | — | — |
 | WP5.2 | [P19 Engine Kustomisasi & Preset](P19-customization.md) | semua modul | 2 pekan | ⬜ Belum | — | — |
-| WP5.3+ | [P20 Ekspor Data & Rilis](P20-release.md) | semua | 1,5 pekan | ⬜ Belum | — | — |
+| WP5.3 | [P20 Ekspor Data & Rilis](P20-release.md) | semua | 1,5 pekan | ⬜ Belum | — | — |
+| WP5.4 | [P24 Aplikasi Staf](P24-aplikasi-staf.md) | P11, P12, P15 | 1 pekan | ⬜ Belum | — | — |
+| WP5.5 | [P25 Integrasi Aggregator](P25-integrasi-aggregator.md) | P04, P08, P17 | 2,5 pekan | ⬜ Belum | — | — |
+| WP5.6 | [P26 Paket Self-Hosted](P26-self-hosted.md) | P20, P21 | 0,5 pekan | ⬜ Belum | — | — |
+| WP5.7 | [P21 Billing & Subscription](P21-billing-subscription.md) | P01, P18, P19 | 2 pekan | ⬜ Belum | — | — |
 
-**Ringkasan:** ✅ 0 / 20 selesai · 🟡 0 jalan · ⬜ 20 belum · sisa effort 36–45 pekan.
+**Ringkasan:** ✅ 0 / 26 selesai · 🟡 0 jalan · ⬜ 26 belum · sisa effort 45–54 pekan.
+
+> **Catatan penomoran:** nomor file P21–P26 mencerminkan urutan penulisan, bukan
+> urutan eksekusi — keenamnya ditambahkan belakangan untuk menutup lubang cakupan.
+> **Urutan tabel di atas yang mengikat**, bukan urutan nomor file.
 
 ---
 
@@ -137,6 +147,9 @@ Hal yang sudah diketahui hilang atau salah. Setiap baris punya WP penebusnya —
 | Migrasi belum pernah diverifikasi di PostgreSQL maupun MySQL | tidak ada server DB di lingkungan ini | P03 |
 | File `retailer` (106 KB, tanpa ekstensi) tercatat di git root, tidak dirujuk config manapun | `git ls-files \| grep -x retailer` | P03 (cleanup) |
 | Belum ada `routes/api.php`; middleware outlet berbasis header `X-Outlet-Id` belum punya grup `api` untuk didaftarkan | `bootstrap/app.php` `withRouting()` tanpa `api:` | P10 |
+| Preset "Resto Lengkap" di P19 menyalakan feature flag `tables` & `kds`, modulnya baru dibangun di P23 | `P19-customization.md` §18.2 vs `P23` | P23 (atau hapus klaim presetnya) |
+| `orders.customer_id` & `customer_credits` dirujuk blueprint sejak M5/M6 tapi entitasnya baru dibuat di P22 | `20-blueprint-produk.md` baris 481, 593 | P22 |
+| `tenants.plan` & `subscription_ends_at` dibuat di P01 tapi tidak ada yang mengisinya sampai P21 | `P01` §1 vs `P21` | P21 |
 
 ---
 
